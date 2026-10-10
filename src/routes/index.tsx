@@ -1,5 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,9 +34,27 @@ function Index() {
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
   const [ended, setEnded] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [showHint, setShowHint] = useState(false);
   const ref = useRef<HTMLVideoElement>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const lock = useRef(0);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!localStorage.getItem("xorost_seen_controls")) setShowHint(true);
+  }, []);
+
+  const dismissHint = () => {
+    if (!showHint) return;
+    setShowHint(false);
+    localStorage.setItem("xorost_seen_controls", "1");
+  };
 
   const parts = Math.max(1, Math.ceil(duration / SEG));
   const video = videos[vi] ?? DEFAULTS[0]!;
