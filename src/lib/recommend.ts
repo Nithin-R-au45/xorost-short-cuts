@@ -87,7 +87,7 @@ export async function forYou(userId?: string): Promise<Vid[]> {
     const s = signal(v);
     if (!s || !v.embedding?.length || v.userId === userId) continue;
     centroid ??= new Array(v.embedding.length).fill(0);
-    v.embedding.forEach((x, i) => (centroid![i] += x * s));
+    v.embedding.forEach((x, i) => (centroid![i] = (centroid![i] ?? 0) + x * s));
   }
   const cos = (a: number[], b: number[]) => {
     let d = 0, na = 0, nb = 0;
