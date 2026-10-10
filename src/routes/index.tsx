@@ -1,3 +1,4 @@
+import { NotificationBell } from "@/components/NotificationBell";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { pill, useSession } from "@/lib/session";
@@ -107,7 +108,10 @@ function Index() {
         />
       </label>
       {session ? (
-        <ProfileMenu session={session} />
+        <>
+          <NotificationBell uid={session.user.id} />
+          <ProfileMenu session={session} />
+        </>
       ) : (
         <Link to="/auth" onClick={(e) => e.stopPropagation()} className={pill}>Sign in</Link>
       )}
