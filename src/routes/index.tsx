@@ -37,7 +37,7 @@ function Index() {
   const lock = useRef(0);
 
   const parts = Math.max(1, Math.ceil(duration / SEG));
-  const video = videos[vi];
+  const video = videos[vi] ?? DEFAULTS[0]!;
 
   const nextPart = (d: number) => {
     setPart((p) => {
@@ -106,11 +106,11 @@ function Index() {
     <main className="flex h-[100dvh] items-center justify-center bg-background">
       <div
         className="relative h-full w-full max-w-[min(100vw,56.25dvh)] overflow-hidden bg-background select-none touch-none"
-        onTouchStart={(e) => (touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY })}
+        onTouchStart={(e) => (touch.current = { x: e.touches[0]!.clientX, y: e.touches[0]!.clientY })}
         onTouchEnd={(e) => {
           if (!touch.current) return;
-          const dx = e.changedTouches[0].clientX - touch.current.x;
-          const dy = e.changedTouches[0].clientY - touch.current.y;
+          const dx = e.changedTouches[0]!.clientX - touch.current.x;
+          const dy = e.changedTouches[0]!.clientY - touch.current.y;
           touch.current = null;
           if (Math.max(Math.abs(dx), Math.abs(dy)) > 40) swipe(dx, dy);
           else ref.current && (ref.current.paused ? ref.current.play() : ref.current.pause());
