@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CircleUserRound, Bookmark, LogOut, ArrowLeft, Pencil, Trash2, Check, X, Play, MessageCircle } from "lucide-react";
+import { CircleUserRound, Bookmark, LogOut, ArrowLeft, Pencil, Trash2, Check, X, Play, MessageCircle, Eye } from "lucide-react";
 import { Player } from "@/components/Player";
 import { fetchVideos, type Vid } from "@/lib/videos";
 import { useEffect, useState } from "react";
@@ -36,6 +36,7 @@ function ProfilePage() {
   const [videos, setVideos] = useState<MyVideo[]>([]);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [playing, setPlaying] = useState<Vid[] | null>(null);
@@ -60,6 +61,11 @@ function ProfilePage() {
     if (v?.length) {
       const { data: vw } = await supabase.from("video_views").select("video_id").in("video_id", v.map((x) => x.id));
       setViews(vw?.length ?? 0);
+      const vc: Record<string, number> = {};
+      (vw ?? []).forEach((x) => {
+        vc[x.video_id] = (vc[x.video_id] ?? 0) + 1;
+      });
+      setViewCounts(vc);
       const { data: cm } = await supabase.from("comments").select("video_key").in("video_key", v.map((x) => `vid:${x.id}`));
       const cc: Record<string, number> = {};
       (cm ?? []).forEach((x) => {
@@ -214,7 +220,9 @@ function ProfilePage() {
                     <Play size={18} className="text-foreground" />
                   </div>
                   <div className="pointer-events-none absolute bottom-1 left-1 flex items-center gap-1 rounded-full bg-overlay/60 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
-                    <MessageCircle size={11} />
+                    <Eye size={11} />
+                    {viewCounts[v.id] ?? 0}
+                    <MessageCircle size={11} className="ml-1" />
                     {commentCounts[v.id] ?? 0}
                   </div>
                   <div className="absolute right-1 top-1 flex gap-1">
