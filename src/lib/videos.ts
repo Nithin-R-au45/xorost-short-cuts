@@ -60,3 +60,31 @@ export async function extractFrames(file: File, onProgress?: (p: number) => void
   URL.revokeObjectURL(url);
   return out;
 }
+
+/** Capture one JPEG frame near the start of a video file, as a Blob for upload. */
+export async function extractThumb(file: File): Promise<Blob> {
+  const url = URL.createObjectURL(file);
+  try {
+    const v = document.createElement("video");
+    v.muted = true;
+    v.preload = "auto";
+    v.src = url;
+    await new Promise<void>((res, rej) => {
+      v.onloadedmetadata = () => res();
+      v.onerror = () => rej(new Error("Can't read video"));
+    });
+    v.currentTime = Math.min(1, v.duration * 0.1 || 0);
+    await new Promise((r) => (v.onseeked = r));
+    const w = 480;
+    const h = Math.round((w * v.videoHeight) / (v.videoWidth || 1)) || 270;
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    c.getContext("2d")!.drawImage(v, 0, 0, w, h);
+    const blob = await new Promise<Blob | null>((r) => c.toBlob(r, "image/jpeg", 0.75));
+    if (!blob) throw new Error("Couldn't capture thumbnail");
+    return blob;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
