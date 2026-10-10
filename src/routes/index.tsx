@@ -1,5 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,9 +34,27 @@ function Index() {
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
   const [ended, setEnded] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [showHint, setShowHint] = useState(false);
   const ref = useRef<HTMLVideoElement>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const lock = useRef(0);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!localStorage.getItem("xorost_seen_controls")) setShowHint(true);
+  }, []);
+
+  const dismissHint = () => {
+    if (!showHint) return;
+    setShowHint(false);
+    localStorage.setItem("xorost_seen_controls", "1");
+  };
 
   const parts = Math.max(1, Math.ceil(duration / SEG));
   const video = videos[vi] ?? DEFAULTS[0]!;
@@ -106,6 +126,7 @@ function Index() {
     <main className="flex h-[100dvh] items-center justify-center bg-background">
       <div
         className="relative h-full w-full max-w-[min(100vw,56.25dvh)] overflow-hidden bg-background select-none touch-none"
+        onPointerDown={dismissHint}
         onTouchStart={(e) => (touch.current = { x: e.touches[0]!.clientX, y: e.touches[0]!.clientY })}
         onTouchEnd={(e) => {
           if (!touch.current) return;
@@ -145,10 +166,32 @@ function Index() {
             <h1 className="font-display text-2xl font-bold tracking-tight">
               Xoro<span className="text-primary">st</span>
             </h1>
-            <label className="pointer-events-auto cursor-pointer rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground" onClick={(e) => e.stopPropagation()}>
-              + Upload
-              <input type="file" accept="video/*" className="hidden" onChange={(e) => onUpload(e.target.files?.[0])} />
-            </label>
+            <div className="pointer-events-auto flex items-center gap-2">
+              <label className="cursor-pointer rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground" onClick={(e) => e.stopPropagation()}>
+                + Upload
+                <input type="file" accept="video/*" className="hidden" onChange={(e) => onUpload(e.target.files?.[0])} />
+              </label>
+              {session ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    supabase.auth.signOut();
+                  }}
+                  className="rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm font-semibold"
+                  title={session.user.email ?? undefined}
+                >
+                  Sign out
+                </button>
+              ) : (
+                <Link
+                  to="/auth"
+                  onClick={(e) => e.stopPropagation()}
+                  className="rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm font-semibold"
+                >
+                  Sign in
+                </Link>
+              )}
+            </div>
           </div>
           <div className="mt-3 flex gap-1">
             {Array.from({ length: parts }).map((_, i) => (
@@ -166,11 +209,19 @@ function Index() {
           </p>
           <h2 className="font-display text-3xl font-bold">{video.title}</h2>
           <p className="text-sm text-muted-foreground">
-            {fmt(part * SEG)} – {fmt(Math.min((part + 1) * SEG, duration))} · Swipe ← next part · Swipe ↑ new video
+            {fmt(part * SEG)} – {fmt(Math.min((part + 1) * SEG, duration))}
           </p>
         </div>
 
-        {ended && (
+        {showHint && (
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-overlay text-center">
+            <p className="font-display text-xl font-semibold">How Xorost works</p>
+            <p className="text-sm text-muted-foreground">Swipe or drag ← for the next part · ↑ for a new video</p>
+            <p className="text-xs text-muted-foreground">Tap anywhere to start</p>
+          </div>
+        )}
+
+        {ended && !showHint && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-overlay text-center">
             {part + 1 < parts ? (
               <>
