@@ -141,7 +141,9 @@ function ProfilePage() {
               {videos.map((v) => (
                 <div key={v.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
                   <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
-                    {thumbs[v.id] ? (
+                    {thumbs[v.id] && v.thumb_path ? (
+                      <img src={thumbs[v.id]} alt={v.title} className="h-full w-full object-cover" />
+                    ) : thumbs[v.id] ? (
                       <video
                         src={thumbs[v.id] + "#t=1"}
                         muted
