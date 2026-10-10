@@ -29,6 +29,7 @@ function ProfilePage() {
   const uid = session?.user.id;
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
+  const [views, setViews] = useState(0);
   const [followerList, setFollowerList] = useState<string[]>([]);
   const [followingList, setFollowingList] = useState<string[]>([]);
   const [showList, setShowList] = useState<"followers" | "following" | null>(null);
