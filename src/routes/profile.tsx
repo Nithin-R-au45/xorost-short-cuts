@@ -29,6 +29,7 @@ function ProfilePage() {
   const uid = session?.user.id;
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
+  const [views, setViews] = useState(0);
   const [followerList, setFollowerList] = useState<string[]>([]);
   const [followingList, setFollowingList] = useState<string[]>([]);
   const [showList, setShowList] = useState<"followers" | "following" | null>(null);
@@ -57,6 +58,8 @@ function ProfilePage() {
     setFollowing(fg?.length ?? 0);
     setVideos(v ?? []);
     if (v?.length) {
+      const { data: vw } = await supabase.from("video_views").select("video_id").in("video_id", v.map((x) => x.id));
+      setViews(vw?.length ?? 0);
       const { data: cm } = await supabase.from("comments").select("video_key").in("video_key", v.map((x) => `vid:${x.id}`));
       const cc: Record<string, number> = {};
       (cm ?? []).forEach((x) => {
@@ -131,7 +134,7 @@ function ProfilePage() {
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+            <div className="mt-3 grid grid-cols-4 gap-2 text-center">
               <button onClick={() => setShowList(showList === "followers" ? null : "followers")} className={`rounded-2xl border bg-card p-3 ${showList === "followers" ? "border-primary" : "border-border"}`}>
                 <p className="font-display text-xl font-bold">{followers}</p>
                 <p className="text-xs text-muted-foreground">Followers</p>
@@ -140,6 +143,10 @@ function ProfilePage() {
                 <p className="font-display text-xl font-bold">{following}</p>
                 <p className="text-xs text-muted-foreground">Following</p>
               </button>
+              <div className="rounded-2xl border border-border bg-card p-3">
+                <p className="font-display text-xl font-bold">{views}</p>
+                <p className="text-xs text-muted-foreground">Views</p>
+              </div>
               <div className="rounded-2xl border border-border bg-card p-3">
                 <p className="font-display text-xl font-bold">{videos.length}</p>
                 <p className="text-xs text-muted-foreground">Videos</p>
