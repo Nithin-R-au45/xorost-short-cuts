@@ -28,6 +28,7 @@ function ProfilePage() {
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
   const [videos, setVideos] = useState<MyVideo[]>([]);
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
 
@@ -41,6 +42,16 @@ function ProfilePage() {
     setFollowers(fr ?? 0);
     setFollowing(fg ?? 0);
     setVideos(v ?? []);
+    if (v?.length) {
+      const { data: signed } = await supabase.storage.from("videos").createSignedUrls(v.map((x) => x.path), 60 * 60 * 6);
+      const m: Record<string, string> = {};
+      v.forEach((x, i) => {
+        if (signed?.[i]?.signedUrl) m[x.id] = signed[i].signedUrl;
+      });
+      setThumbs(m);
+    } else {
+      setThumbs({});
+    }
   };
   useEffect(() => {
     load();
