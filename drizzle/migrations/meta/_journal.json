@@ -57,6 +57,13 @@
       "when": 1791621809181,
       "tag": "0007_video_upload_details_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791622322456,
+      "tag": "0008_comment_replies_likes",
+      "breakpoints": true
     }
   ]
 }
