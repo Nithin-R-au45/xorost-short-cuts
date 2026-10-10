@@ -60,6 +60,13 @@ export function SocialBar({ videoKey, title, session, authorId }: { videoKey: st
     toast(saved ? "Removed from saved" : "Saved");
     load();
   };
+  const toggleFollow = async () => {
+    if (need() || !authorId) return;
+    if (following) await supabase.from("follows").delete().eq("follower_id", uid!).eq("followee_id", authorId);
+    else await supabase.from("follows").insert({ follower_id: uid!, followee_id: authorId });
+    toast(following ? "Unfollowed" : "Following");
+    setFollowing(!following);
+  };
   const share = async () => {
     const url = window.location.href;
     try {
@@ -107,6 +114,9 @@ export function SocialBar({ videoKey, title, session, authorId }: { videoKey: st
         <Btn on={() => setOpen(true)} icon={<MessageCircle />} label={comments.length} />
         <Btn on={toggleSave} active={saved} icon={<Bookmark className={saved ? "fill-current" : ""} />} label={saved ? "Saved" : "Save"} />
         <Btn on={share} icon={<Share2 />} label="Share" />
+        {authorId && authorId !== uid && (
+          <Btn on={toggleFollow} active={following} icon={following ? <UserCheck /> : <UserPlus />} label={following ? "Following" : "Follow"} />
+        )}
       </div>
 
       {open && (
