@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Player } from "@/components/Player";
 import { ProfileMenu } from "@/components/ProfileMenu";
-import { extractFrames, type Vid } from "@/lib/videos";
+import { extractFrames, extractThumb, type Vid } from "@/lib/videos";
 import { forYou } from "@/lib/recommend";
 import { embedVideo, generateSegment } from "@/lib/segments.functions";
 
@@ -49,6 +49,14 @@ function Index() {
       if (up.error) throw up.error;
       const { data: v, error } = await supabase.from("videos").insert({ user_id: session.user.id, title, path }).select("id").single();
       if (error) throw error;
+      try {
+        const thumb = await extractThumb(f);
+        const thumbPath = path.replace(/\.[^.]+$/, "") + "-thumb.jpg";
+        const tu = await supabase.storage.from("videos").upload(thumbPath, thumb, { contentType: "image/jpeg" });
+        if (!tu.error) await supabase.from("videos").update({ thumb_path: thumbPath }).eq("id", v.id);
+      } catch {
+        // thumbnail is best-effort; the video still works without it
+      }
       await reload();
       setBusy("Reading video…");
       const frames = await extractFrames(f);

@@ -36,6 +36,13 @@
       "when": 1791619275138,
       "tag": "0004_create_follows",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791621048885,
+      "tag": "0005_add_video_thumb_path",
+      "breakpoints": true
     }
   ]
 }
