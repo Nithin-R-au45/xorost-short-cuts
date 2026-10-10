@@ -95,7 +95,7 @@ function Index() {
       }
       await embedVideo({ data: { videoId: v.id } }).catch(() => {});
       await reload();
-      toast.success("Video ready");
+      toast.success(v.status === "pending" ? "Video sent for admin review" : "Video ready");
       return true;
     } catch (e) {
       if (uploadedPath && !registered) await supabase.storage.from("videos").remove([uploadedPath]);

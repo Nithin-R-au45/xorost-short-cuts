@@ -22,7 +22,7 @@ export const registerVideo = createServerFn({ method: "POST" })
     const { data: video, error } = await context.supabase.from("videos").insert({
       user_id: context.userId, path: data.path, title: data.title, description: data.description,
       duration_seconds: data.duration, size_bytes: size,
-    }).select("id").single();
+    }).select("id,status").single();
     if (error) throw new Error(error.message);
     return video;
   });
