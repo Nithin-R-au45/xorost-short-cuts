@@ -58,6 +58,8 @@ function ProfilePage() {
     setFollowing(fg?.length ?? 0);
     setVideos(v ?? []);
     if (v?.length) {
+      const { data: vw } = await supabase.from("video_views").select("video_id").in("video_id", v.map((x) => x.id));
+      setViews(vw?.length ?? 0);
       const { data: cm } = await supabase.from("comments").select("video_key").in("video_key", v.map((x) => `vid:${x.id}`));
       const cc: Record<string, number> = {};
       (cm ?? []).forEach((x) => {
