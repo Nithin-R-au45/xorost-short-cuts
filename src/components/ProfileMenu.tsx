@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { CircleUserRound, Bookmark, LogOut } from "lucide-react";
+import { CircleUserRound, Bookmark, LogOut, ShieldCheck } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -8,6 +8,10 @@ export function ProfileMenu({ session }: { session: Session }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const [admin, setAdmin] = useState(false);
+  useEffect(() => {
+    supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin" }).then(({ data }) => setAdmin(!!data));
+  }, [session.user.id]);
 
   useEffect(() => {
     if (!open) return;
@@ -40,6 +44,11 @@ export function ProfileMenu({ session }: { session: Session }) {
           <Link to="/saved" className={item} onClick={() => setOpen(false)}>
             <Bookmark size={16} /> Saved
           </Link>
+          {admin && (
+            <Link to="/admin" className={item} onClick={() => setOpen(false)}>
+              <ShieldCheck size={16} /> Admin
+            </Link>
+          )}
           <button
             className={item}
             onClick={async () => {

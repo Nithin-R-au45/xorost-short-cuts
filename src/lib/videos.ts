@@ -6,6 +6,7 @@ export type Vid = { id?: string; title: string; description?: string; src: strin
 
 export async function fetchVideos(ids?: string[]): Promise<Vid[]> {
   let q = supabase.from("videos").select("id,title,description,path,user_id,created_at,embedding,video_segments(idx,title,summary)").order("created_at", { ascending: false }).limit(200);
+  if (!ids) q = q.eq("status", "approved");
   if (ids) {
     if (!ids.length) return [];
     q = q.in("id", ids);
