@@ -19,17 +19,10 @@ export const Route = createFileRoute("/")({
 });
 
 type Vid = { title: string; src: string };
-const BASE = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/";
-const DEFAULTS: Vid[] = [
-  { title: "Big Buck Bunny", src: BASE + "BigBuckBunny.mp4" },
-  { title: "Elephants Dream", src: BASE + "ElephantsDream.mp4" },
-  { title: "Sintel", src: BASE + "Sintel.mp4" },
-  { title: "Tears of Steel", src: BASE + "TearsOfSteel.mp4" },
-];
 const SEG = 60;
 
 function Index() {
-  const [videos, setVideos] = useState<Vid[]>(DEFAULTS);
+  const [videos, setVideos] = useState<Vid[]>([]);
   const [vi, setVi] = useState(0);
   const [part, setPart] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -58,7 +51,7 @@ function Index() {
   };
 
   const parts = Math.max(1, Math.ceil(duration / SEG));
-  const video = videos[vi] ?? DEFAULTS[0]!;
+  const video = videos[vi];
 
   const nextPart = (d: number) => {
     setPart((p) => {
