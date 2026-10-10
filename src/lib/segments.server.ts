@@ -11,9 +11,9 @@ export async function summarizeSegment(opts: {
   videoTitle: string;
   idx: number;
   frames: string[];
-  prevTitle?: string;
+  prevTitle?: string | undefined;
 }) {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI is not configured");
   let runId: string | undefined;
   const provider = createOpenAI({
