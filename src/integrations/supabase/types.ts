@@ -162,6 +162,7 @@ export type Database = {
           embedding: number[] | null
           id: string
           path: string
+          thumb_path: string | null
           title: string
           user_id: string
         }
@@ -170,6 +171,7 @@ export type Database = {
           embedding?: number[] | null
           id?: string
           path: string
+          thumb_path?: string | null
           title: string
           user_id: string
         }
@@ -178,6 +180,7 @@ export type Database = {
           embedding?: number[] | null
           id?: string
           path?: string
+          thumb_path?: string | null
           title?: string
           user_id?: string
         }
