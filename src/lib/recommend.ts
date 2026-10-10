@@ -8,8 +8,11 @@
  *  4. Scoring — predict per-action probabilities, blend with weights.
  *  5. Author diversity — repeated creators are attenuated.
  * Also borrows from justin-theodorus/for-you (user embedding = centroid of engaged
- * videos, cosine similarity) and ChitviJoshi/Post_Recommendation_System
- * (interest + popularity + a ~1-in-7 discovery slot for new topics).
+ * videos, cosine similarity), ChitviJoshi/Post_Recommendation_System
+ * (interest + popularity + a ~1-in-7 discovery slot for new topics), and
+ * recommenders-team/recommenders (SAR-style item-item collaborative filtering:
+ * score a video by how much users similar to you engaged with it, where user
+ * similarity is the Jaccard overlap of their positive items).
  */
 import { supabase } from "@/integrations/supabase/client";
 import { fetchVideos, type Vid } from "@/lib/videos";
