@@ -19,17 +19,10 @@ export const Route = createFileRoute("/")({
 });
 
 type Vid = { title: string; src: string };
-const BASE = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/";
-const DEFAULTS: Vid[] = [
-  { title: "Big Buck Bunny", src: BASE + "BigBuckBunny.mp4" },
-  { title: "Elephants Dream", src: BASE + "ElephantsDream.mp4" },
-  { title: "Sintel", src: BASE + "Sintel.mp4" },
-  { title: "Tears of Steel", src: BASE + "TearsOfSteel.mp4" },
-];
 const SEG = 60;
 
 function Index() {
-  const [videos, setVideos] = useState<Vid[]>(DEFAULTS);
+  const [videos, setVideos] = useState<Vid[]>([]);
   const [vi, setVi] = useState(0);
   const [part, setPart] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -58,7 +51,7 @@ function Index() {
   };
 
   const parts = Math.max(1, Math.ceil(duration / SEG));
-  const video = videos[vi] ?? DEFAULTS[0]!;
+  const video = videos[vi];
 
   const nextPart = (d: number) => {
     setPart((p) => {
@@ -68,6 +61,7 @@ function Index() {
     });
   };
   const nextVideo = (d: number) => {
+    if (!videos.length) return;
     setVi((v) => (v + d + videos.length) % videos.length);
     setPart(0);
     setDuration(0);
@@ -149,6 +143,8 @@ function Index() {
         onMouseLeave={() => (touch.current = null)}
         onWheel={(e) => Math.max(Math.abs(e.deltaX), Math.abs(e.deltaY)) > 30 && swipe(-e.deltaX, -e.deltaY)}
       >
+        {video ? (
+        <>
         <video
           key={video.src}
           ref={ref}
@@ -237,6 +233,15 @@ function Index() {
                 <p className="font-display text-xl font-semibold">The end — swipe up for a new video</p>
               </>
             )}
+          </div>
+        )}
+        </>
+        ) : (
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
+            <p className="font-display text-2xl font-semibold">No videos yet</p>
+            <p className="max-w-xs text-sm text-muted-foreground">
+              Tap <span className="font-semibold text-foreground">+ Upload</span> above to add a long video — Xorost will play it one minute at a time.
+            </p>
           </div>
         )}
       </div>
