@@ -27,6 +27,9 @@ function ProfilePage() {
   const uid = session?.user.id;
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
+  const [followerList, setFollowerList] = useState<string[]>([]);
+  const [followingList, setFollowingList] = useState<string[]>([]);
+  const [showList, setShowList] = useState<"followers" | "following" | null>(null);
   const [videos, setVideos] = useState<MyVideo[]>([]);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState<string | null>(null);
@@ -34,13 +37,20 @@ function ProfilePage() {
 
   const load = async () => {
     if (!uid) return;
-    const [{ count: fr }, { count: fg }, { data: v }] = await Promise.all([
-      supabase.from("follows").select("*", { count: "exact", head: true }).eq("followee_id", uid),
-      supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", uid),
+    const [{ data: fr }, { data: fg }, { data: v }] = await Promise.all([
+      supabase.from("follows").select("follower_id").eq("followee_id", uid),
+      supabase.from("follows").select("followee_id").eq("follower_id", uid),
       supabase.from("videos").select("id,title,path,thumb_path,created_at").eq("user_id", uid).order("created_at", { ascending: false }),
     ]);
-    setFollowers(fr ?? 0);
-    setFollowing(fg ?? 0);
+    const ids = [...(fr ?? []).map((x) => x.follower_id), ...(fg ?? []).map((x) => x.followee_id)];
+    const { data: profs } = ids.length
+      ? await supabase.from("profiles").select("id,name").in("id", ids)
+      : { data: [] as { id: string; name: string }[] };
+    const nm = (id: string) => profs?.find((p) => p.id === id)?.name ?? "user";
+    setFollowerList((fr ?? []).map((x) => nm(x.follower_id)));
+    setFollowingList((fg ?? []).map((x) => nm(x.followee_id)));
+    setFollowers(fr?.length ?? 0);
+    setFollowing(fg?.length ?? 0);
     setVideos(v ?? []);
     if (v?.length) {
       // Prefer the stored thumbnail image; fall back to the video file for older uploads.
@@ -102,19 +112,35 @@ function ProfilePage() {
             </div>
 
             <div className="mt-3 grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-2xl border border-border bg-card p-3">
+              <button onClick={() => setShowList(showList === "followers" ? null : "followers")} className={`rounded-2xl border bg-card p-3 ${showList === "followers" ? "border-primary" : "border-border"}`}>
                 <p className="font-display text-xl font-bold">{followers}</p>
                 <p className="text-xs text-muted-foreground">Followers</p>
-              </div>
-              <div className="rounded-2xl border border-border bg-card p-3">
+              </button>
+              <button onClick={() => setShowList(showList === "following" ? null : "following")} className={`rounded-2xl border bg-card p-3 ${showList === "following" ? "border-primary" : "border-border"}`}>
                 <p className="font-display text-xl font-bold">{following}</p>
                 <p className="text-xs text-muted-foreground">Following</p>
-              </div>
+              </button>
               <div className="rounded-2xl border border-border bg-card p-3">
                 <p className="font-display text-xl font-bold">{videos.length}</p>
                 <p className="text-xs text-muted-foreground">Videos</p>
               </div>
             </div>
+            {showList && (
+              <div className="mt-3 rounded-2xl border border-border bg-card p-3">
+                <p className="mb-2 text-sm font-semibold">{showList === "followers" ? "Followers" : "Following"}</p>
+                {(showList === "followers" ? followerList : followingList).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nobody yet.</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {(showList === "followers" ? followerList : followingList).map((n, i) => (
+                      <li key={i} className="flex items-center gap-2 text-sm">
+                        <CircleUserRound size={18} className="text-muted-foreground" /> {n}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
             <div className="mt-3 flex gap-2">
               <Link to="/saved" className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm hover:bg-muted">

@@ -62,10 +62,17 @@ export function SocialBar({ videoKey, title, session, authorId }: { videoKey: st
   };
   const toggleFollow = async () => {
     if (need() || !authorId) return;
-    if (following) await supabase.from("follows").delete().eq("follower_id", uid!).eq("followee_id", authorId);
-    else await supabase.from("follows").insert({ follower_id: uid!, followee_id: authorId });
-    toast(following ? "Unfollowed" : "Following");
-    setFollowing(!following);
+    const was = following;
+    setFollowing(!was);
+    const { error } = was
+      ? await supabase.from("follows").delete().eq("follower_id", uid!).eq("followee_id", authorId)
+      : await supabase.from("follows").upsert({ follower_id: uid!, followee_id: authorId }, { ignoreDuplicates: true });
+    if (error) {
+      setFollowing(was);
+      toast.error("Couldn't update follow, try again");
+      return;
+    }
+    toast(was ? "Unfollowed" : "Following");
   };
   const share = async () => {
     const url = window.location.href;

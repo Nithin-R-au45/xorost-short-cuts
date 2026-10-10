@@ -59,6 +59,54 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          actor_id: string
+          actor_name: string
+          created_at: string
+          id: string
+          kind: string
+          read: boolean
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          actor_name?: string
+          created_at?: string
+          id?: string
+          kind: string
+          read?: boolean
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          actor_name?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          read?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          name?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       reactions: {
         Row: {
           user_id: string
