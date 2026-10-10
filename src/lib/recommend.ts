@@ -28,11 +28,13 @@ const textOf = (v: Vid) => [v.title, ...(v.segments ?? []).flatMap((s) => [s.tit
 const sig = (x: number) => 1 / (1 + Math.exp(-x));
 
 export async function forYou(userId?: string): Promise<Vid[]> {
-  const [videos, { data: pop }, { data: reacts }, { data: comments }] = await Promise.all([
+  const [videos, { data: pop }, { data: reacts }, { data: comments }, { data: allSaves }, { data: allViews }] = await Promise.all([
     fetchVideos(),
     supabase.rpc("video_popularity"),
     supabase.from("reactions").select("user_id,video_key,value"),
     supabase.from("comments").select("user_id,video_key"),
+    supabase.from("saves").select("user_id,video_key"),
+    supabase.from("video_views").select("user_id,video_id,seconds"),
   ]);
   if (!videos.length) return [];
 
