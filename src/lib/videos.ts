@@ -74,12 +74,14 @@ export async function extractThumb(file: File): Promise<Blob> {
     v.setAttribute("playsinline", "");
     v.preload = "auto";
     v.src = url;
-    await new Promise<void>((res, rej) => {
-      v.onloadedmetadata = () => res();
+    const timeout = (ms: number) => new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Thumbnail timed out")), ms));
+    await Promise.race([new Promise<void>((res, rej) => {
+      v.onloadeddata = () => res();
       v.onerror = () => rej(new Error("Can't read video"));
-    });
-    v.currentTime = Math.min(1, v.duration * 0.1 || 0);
-    await new Promise((r) => (v.onseeked = r));
+    }), timeout(8000)]);
+    const seeked = new Promise((r) => (v.onseeked = r));
+    v.currentTime = Math.min(1, v.duration * 0.1 || 0.1);
+    await Promise.race([seeked, timeout(8000)]);
     const w = 480;
     const h = Math.round((w * v.videoHeight) / (v.videoWidth || 1)) || 270;
     const c = document.createElement("canvas");
