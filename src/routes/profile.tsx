@@ -134,7 +134,7 @@ function ProfilePage() {
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+            <div className="mt-3 grid grid-cols-4 gap-2 text-center">
               <button onClick={() => setShowList(showList === "followers" ? null : "followers")} className={`rounded-2xl border bg-card p-3 ${showList === "followers" ? "border-primary" : "border-border"}`}>
                 <p className="font-display text-xl font-bold">{followers}</p>
                 <p className="text-xs text-muted-foreground">Followers</p>
@@ -143,6 +143,10 @@ function ProfilePage() {
                 <p className="font-display text-xl font-bold">{following}</p>
                 <p className="text-xs text-muted-foreground">Following</p>
               </button>
+              <div className="rounded-2xl border border-border bg-card p-3">
+                <p className="font-display text-xl font-bold">{views}</p>
+                <p className="text-xs text-muted-foreground">Views</p>
+              </div>
               <div className="rounded-2xl border border-border bg-card p-3">
                 <p className="font-display text-xl font-bold">{videos.length}</p>
                 <p className="text-xs text-muted-foreground">Videos</p>
