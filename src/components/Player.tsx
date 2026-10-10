@@ -33,6 +33,12 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
     if (n < 0) return;
     if (n >= parts) {
       // past the last part — loop the same video, TikTok-style
+      const el = ref.current;
+      if (el) {
+        el.currentTime = 0;
+        el.play().catch(() => {});
+      }
+      setProgress(0);
       setPart(0);
       return;
     }
