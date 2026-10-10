@@ -126,6 +126,7 @@ function Index() {
     <main className="flex h-[100dvh] items-center justify-center bg-background">
       <div
         className="relative h-full w-full max-w-[min(100vw,56.25dvh)] overflow-hidden bg-background select-none touch-none"
+        onPointerDown={dismissHint}
         onTouchStart={(e) => (touch.current = { x: e.touches[0]!.clientX, y: e.touches[0]!.clientY })}
         onTouchEnd={(e) => {
           if (!touch.current) return;
@@ -165,10 +166,32 @@ function Index() {
             <h1 className="font-display text-2xl font-bold tracking-tight">
               Xoro<span className="text-primary">st</span>
             </h1>
-            <label className="pointer-events-auto cursor-pointer rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground" onClick={(e) => e.stopPropagation()}>
-              + Upload
-              <input type="file" accept="video/*" className="hidden" onChange={(e) => onUpload(e.target.files?.[0])} />
-            </label>
+            <div className="pointer-events-auto flex items-center gap-2">
+              <label className="cursor-pointer rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground" onClick={(e) => e.stopPropagation()}>
+                + Upload
+                <input type="file" accept="video/*" className="hidden" onChange={(e) => onUpload(e.target.files?.[0])} />
+              </label>
+              {session ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    supabase.auth.signOut();
+                  }}
+                  className="rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm font-semibold"
+                  title={session.user.email ?? undefined}
+                >
+                  Sign out
+                </button>
+              ) : (
+                <Link
+                  to="/auth"
+                  onClick={(e) => e.stopPropagation()}
+                  className="rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm font-semibold"
+                >
+                  Sign in
+                </Link>
+              )}
+            </div>
           </div>
           <div className="mt-3 flex gap-1">
             {Array.from({ length: parts }).map((_, i) => (
