@@ -21,8 +21,8 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type Row = { id: string; title: string; path: string; thumb_path: string | null; user_id: string; status: string; created_at: string; thumb?: string };
-type User = { id: string; name: string; created_at: string; blocked?: string };
+type Row = { id: string; title: string; path: string; thumb_path: string | null; user_id: string; status: string; created_at: string; thumb?: string | undefined };
+type User = { id: string; name: string; created_at: string; blocked?: string | undefined };
 type Tab = "posts" | "review" | "users";
 
 function AdminPage() {
@@ -63,27 +63,27 @@ function AdminPage() {
 
   const setStatus = async (r: Row, status: "approved" | "rejected") => {
     const { error } = await supabase.from("videos").update({ status }).eq("id", r.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(status === "approved" ? "Approved" : "Rejected");
     load();
   };
   const remove = async (r: Row) => {
     if (!confirm(`Delete "${r.title}" for everyone?`)) return;
     const { error } = await supabase.from("videos").delete().eq("id", r.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await supabase.storage.from("videos").remove(r.thumb_path ? [r.path, r.thumb_path] : [r.path]);
     toast.success("Deleted");
     load();
   };
   const block = async (u: User, reason: string) => {
     const { error } = await supabase.from("upload_blocks").upsert({ user_id: u.id, reason });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(`${u.name} can no longer upload`);
     load();
   };
   const unblock = async (u: User) => {
     const { error } = await supabase.from("upload_blocks").delete().eq("user_id", u.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(`${u.name} can upload again`);
     load();
   };
@@ -178,7 +178,7 @@ function AdminPage() {
       {playing && (
         <div className="fixed inset-0 z-50 bg-background">
           <button onClick={() => setPlaying(null)} aria-label="Close" className="absolute right-3 top-3 z-50 rounded-full bg-card p-2"><X size={18} /></button>
-          <Player videos={playing} />
+          <Player videos={playing} session={session ?? null} headerRight={null} empty={null} />
         </div>
       )}
     </div>
