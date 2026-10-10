@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { SocialBar } from "@/components/SocialBar";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -212,6 +213,8 @@ function Index() {
             {fmt(part * SEG)} – {fmt(Math.min((part + 1) * SEG, duration))}
           </p>
         </div>
+
+        <SocialBar videoKey={video.src.startsWith("blob:") ? "local:" + video.title : video.src} title={video.title} session={session} />
 
         {showHint && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-overlay text-center">
