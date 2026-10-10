@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { SocialBar } from "@/components/SocialBar";
 import { SEG, type Vid } from "@/lib/videos";
 import { recordView } from "@/lib/recommend";
@@ -11,7 +12,10 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
   const [progress, setProgress] = useState(0);
   const [ended, setEnded] = useState(false);
   const [showHint, setShowHint] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
   const ref = useRef<HTMLVideoElement>(null);
+  const summaryRef = useRef<HTMLParagraphElement>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const lock = useRef(0);
 
@@ -111,6 +115,21 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
     setDuration(0);
   }, [videos.length]);
 
+  // the description collapses again whenever the part or video changes
+  useEffect(() => {
+    setExpanded(false);
+  }, [video?.id, part]);
+
+  // only offer the toggle when the summary is actually cut off
+  useEffect(() => {
+    const el = summaryRef.current;
+    if (!el) {
+      setOverflowing(false);
+      return;
+    }
+    if (!expanded) setOverflowing(el.scrollHeight > el.clientHeight + 4);
+  }, [video?.id, part, expanded, duration]);
+
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
   return (
@@ -182,7 +201,23 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
           {video.segments?.[part] && (
             <div className="mt-1 max-w-[80%]">
               <p className="font-semibold">{video.segments[part].title}</p>
-              <p className="text-sm text-muted-foreground">{video.segments[part].summary}</p>
+              <p ref={summaryRef} className={`text-sm text-muted-foreground ${expanded ? "" : "line-clamp-2"}`}>
+                {video.segments[part].summary}
+              </p>
+              {overflowing && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded((v) => !v)}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseUp={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                  className="pointer-events-auto mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary"
+                >
+                  {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  {expanded ? "Show less" : "Show more"}
+                </button>
+              )}
             </div>
           )}
           <p className="text-sm text-muted-foreground">
