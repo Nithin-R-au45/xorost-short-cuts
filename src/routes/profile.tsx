@@ -112,19 +112,35 @@ function ProfilePage() {
             </div>
 
             <div className="mt-3 grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-2xl border border-border bg-card p-3">
+              <button onClick={() => setShowList(showList === "followers" ? null : "followers")} className={`rounded-2xl border bg-card p-3 ${showList === "followers" ? "border-primary" : "border-border"}`}>
                 <p className="font-display text-xl font-bold">{followers}</p>
                 <p className="text-xs text-muted-foreground">Followers</p>
-              </div>
-              <div className="rounded-2xl border border-border bg-card p-3">
+              </button>
+              <button onClick={() => setShowList(showList === "following" ? null : "following")} className={`rounded-2xl border bg-card p-3 ${showList === "following" ? "border-primary" : "border-border"}`}>
                 <p className="font-display text-xl font-bold">{following}</p>
                 <p className="text-xs text-muted-foreground">Following</p>
-              </div>
+              </button>
               <div className="rounded-2xl border border-border bg-card p-3">
                 <p className="font-display text-xl font-bold">{videos.length}</p>
                 <p className="text-xs text-muted-foreground">Videos</p>
               </div>
             </div>
+            {showList && (
+              <div className="mt-3 rounded-2xl border border-border bg-card p-3">
+                <p className="mb-2 text-sm font-semibold">{showList === "followers" ? "Followers" : "Following"}</p>
+                {(showList === "followers" ? followerList : followingList).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nobody yet.</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {(showList === "followers" ? followerList : followingList).map((n, i) => (
+                      <li key={i} className="flex items-center gap-2 text-sm">
+                        <CircleUserRound size={18} className="text-muted-foreground" /> {n}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
             <div className="mt-3 flex gap-2">
               <Link to="/saved" className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm hover:bg-muted">
