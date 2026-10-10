@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { CircleUserRound, Bookmark, LogOut, ArrowLeft, Pencil, Trash2, Check, X, Play } from "lucide-react";
+import { Player } from "@/components/Player";
+import { fetchVideos, type Vid } from "@/lib/videos";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSession, pill } from "@/lib/session";
@@ -34,6 +36,7 @@ function ProfilePage() {
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [playing, setPlaying] = useState<Vid[] | null>(null);
 
   const load = async () => {
     if (!uid) return;
@@ -90,6 +93,15 @@ function ProfilePage() {
     await supabase.storage.from("videos").remove(v.thumb_path ? [v.path, v.thumb_path] : [v.path]);
     toast("Video deleted");
     load();
+  };
+
+  const openVideo = async (v: MyVideo) => {
+    const vids = await fetchVideos([v.id]);
+    if (!vids.length) {
+      toast.error("Couldn't open video");
+      return;
+    }
+    setPlaying(vids);
   };
 
   return (
@@ -158,15 +170,15 @@ function ProfilePage() {
             </div>
 
             <h2 className="mt-6 font-display text-sm font-semibold text-muted-foreground">Your uploads</h2>
-            <div className="mt-2 flex flex-col gap-2">
+            <div className="mt-2 grid grid-cols-3 gap-0.5">
               {videos.length === 0 && (
-                <p className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
+                <p className="col-span-3 rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
                   No uploads yet. Tap + Upload on the feed to add your first video.
                 </p>
               )}
               {videos.map((v) => (
-                <div key={v.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
-                  <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
+                <div key={v.id} className="relative aspect-square overflow-hidden bg-muted">
+                  <button onClick={() => openVideo(v)} aria-label={`Play ${v.title}`} className="block h-full w-full cursor-pointer">
                     {thumbs[v.id] && v.thumb_path ? (
                       <img src={thumbs[v.id]} alt={v.title} className="h-full w-full object-cover" />
                     ) : thumbs[v.id] ? (
@@ -179,49 +191,57 @@ function ProfilePage() {
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                        <CircleUserRound size={20} />
+                        <CircleUserRound size={22} />
                       </div>
                     )}
-                    <div className="absolute inset-0 flex items-center justify-center bg-overlay/40">
-                      <Play size={18} className="text-foreground" />
-                    </div>
+                  </button>
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-overlay/25">
+                    <Play size={18} className="text-foreground" />
                   </div>
-                  {editing === v.id ? (
-                    <>
+                  <div className="absolute right-1 top-1 flex gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditing(v.id);
+                        setDraft(v.title);
+                      }}
+                      aria-label="Edit title"
+                      className="rounded-full bg-overlay/60 p-1.5 hover:bg-overlay"
+                    >
+                      <Pencil size={13} className="text-foreground" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        remove(v);
+                      }}
+                      aria-label="Delete video"
+                      className="rounded-full bg-overlay/60 p-1.5 text-destructive hover:bg-overlay"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                  {editing === v.id && (
+                    <div
+                      className="absolute inset-0 flex flex-col justify-center gap-1.5 bg-overlay p-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <input
                         value={draft}
                         onChange={(e) => setDraft(e.target.value)}
                         maxLength={120}
                         autoFocus
-                        className="min-w-0 flex-1 rounded-lg border border-border bg-muted px-3 py-1.5 text-sm outline-none"
+                        className="w-full rounded-lg border border-border bg-muted px-2 py-1 text-xs outline-none"
                         onKeyDown={(e) => {
                           if (e.key === "Enter") rename(v);
                           if (e.key === "Escape") setEditing(null);
                         }}
                       />
-                      <button onClick={() => rename(v)} aria-label="Save name" className="text-primary"><Check size={18} /></button>
-                      <button onClick={() => setEditing(null)} aria-label="Cancel" className="text-muted-foreground"><X size={18} /></button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">{v.title}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</p>
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => rename(v)} aria-label="Save name" className="text-primary"><Check size={16} /></button>
+                        <button onClick={() => setEditing(null)} aria-label="Cancel" className="text-muted-foreground"><X size={16} /></button>
                       </div>
-                      <button
-                        onClick={() => {
-                          setEditing(v.id);
-                          setDraft(v.title);
-                        }}
-                        aria-label="Edit title"
-                        className="rounded-full p-2 hover:bg-muted"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button onClick={() => remove(v)} aria-label="Delete video" className="rounded-full p-2 text-destructive hover:bg-muted">
-                        <Trash2 size={16} />
-                      </button>
-                    </>
+                    </div>
                   )}
                 </div>
               ))}
@@ -234,6 +254,20 @@ function ProfilePage() {
           </div>
         )}
       </div>
+      {playing && (
+        <div className="fixed inset-0 z-50">
+          <Player
+            videos={playing}
+            session={session}
+            headerRight={
+              <button onClick={() => setPlaying(null)} aria-label="Close player" className="rounded-full p-1.5 hover:bg-muted">
+                <X size={20} />
+              </button>
+            }
+            empty={<p className="text-sm text-muted-foreground">Video unavailable.</p>}
+          />
+        </div>
+      )}
     </main>
   );
 }
