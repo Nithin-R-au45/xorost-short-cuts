@@ -76,13 +76,13 @@ export async function forYou(userId?: string): Promise<Vid[]> {
     const s = signal(v);
     if (!s) continue;
     for (const t of new Set(tokens(textOf(v)))) interest.set(t, (interest.get(t) ?? 0) + s);
-    if (v.userId) affinity.set(v.userId, (affinity.get(v.userId) ?? 0) + s);
+    if (v.userId && v.userId !== userId) affinity.set(v.userId, (affinity.get(v.userId) ?? 0) + s);
   }
   const norm = Math.sqrt([...interest.values()].reduce((a, b) => a + b * b, 0)) || 1;
   const hasHistory = interest.size > 0;
 
   const scored = videos
-    .filter((v) => myReact.get(v.key) !== -1 && v.userId !== userId) // filters
+    .filter((v) => myReact.get(v.key) !== -1) // filters
     .map((v) => {
       const toks = new Set(tokens(textOf(v)));
       let sim = 0;

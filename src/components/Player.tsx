@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { SocialBar } from "@/components/SocialBar";
 import { SEG, type Vid } from "@/lib/videos";
+import { recordView } from "@/lib/recommend";
 
 export function Player({ videos, session, headerRight, empty }: { videos: Vid[]; session: Session | null; headerRight: ReactNode; empty: ReactNode }) {
   const [vi, setVi] = useState(0);
@@ -50,6 +51,12 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
     el.play().catch(() => {});
   }, [part, duration]);
 
+  useEffect(() => {
+    const uid = session?.user.id;
+    if (uid && video?.id) recordView(uid, video.id, part, 0).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [video?.id, part, session?.user.id]);
+
   const onTime = () => {
     const el = ref.current!;
     const start = part * SEG;
@@ -57,6 +64,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
     setProgress(Math.min(1, (el.currentTime - start) / (end - start)));
     if (el.currentTime >= end - 0.05) {
       el.pause();
+      if (!ended && session && video?.id) recordView(session.user.id, video.id, part, end - start).catch(() => {});
       setEnded(true);
     }
   };
@@ -149,6 +157,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
 
         {/* footer */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-overlay to-transparent p-5 pb-8">
+          {video.reason && <p className="mb-1 text-xs text-muted-foreground">✦ {video.reason}</p>}
           <p className="font-display text-sm uppercase tracking-widest text-primary">
             Part {part + 1} of {duration ? parts : "…"}
           </p>
