@@ -19,7 +19,7 @@ export const Route = createFileRoute("/profile")({
   component: ProfilePage,
 });
 
-type MyVideo = { id: string; title: string; path: string; created_at: string };
+type MyVideo = { id: string; title: string; path: string; thumb_path: string | null; created_at: string };
 
 function ProfilePage() {
   const session = useSession();
@@ -37,13 +37,15 @@ function ProfilePage() {
     const [{ count: fr }, { count: fg }, { data: v }] = await Promise.all([
       supabase.from("follows").select("*", { count: "exact", head: true }).eq("followee_id", uid),
       supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", uid),
-      supabase.from("videos").select("id,title,path,created_at").eq("user_id", uid).order("created_at", { ascending: false }),
+      supabase.from("videos").select("id,title,path,thumb_path,created_at").eq("user_id", uid).order("created_at", { ascending: false }),
     ]);
     setFollowers(fr ?? 0);
     setFollowing(fg ?? 0);
     setVideos(v ?? []);
     if (v?.length) {
-      const { data: signed } = await supabase.storage.from("videos").createSignedUrls(v.map((x) => x.path), 60 * 60 * 6);
+      // Prefer the stored thumbnail image; fall back to the video file for older uploads.
+      const paths = v.map((x) => x.thumb_path ?? x.path);
+      const { data: signed } = await supabase.storage.from("videos").createSignedUrls(paths, 60 * 60 * 6);
       const m: Record<string, string> = {};
       v.forEach((x, i) => {
         if (signed?.[i]?.signedUrl) m[x.id] = signed[i].signedUrl;
