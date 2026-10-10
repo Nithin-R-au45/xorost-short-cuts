@@ -60,18 +60,26 @@ function Index() {
       uploadedPath = path;
       const v = await registerVideo({ data: { ...validated, path } });
       registered = true;
-      try {
-        const thumb = await extractThumb(f);
-        const thumbPath = path.replace(/\.[^.]+$/, "") + "-thumb.jpg";
-        const tu = await supabase.storage.from("videos").upload(thumbPath, thumb, { contentType: "image/jpeg" });
-        if (!tu.error) await supabase.from("videos").update({ thumb_path: thumbPath }).eq("id", v.id);
-      } catch {
-        // thumbnail is best-effort; the video still works without it
-      }
-      await reload();
       setBusy("Reading video…");
       let frames: string[][] = [];
       try { frames = await extractFrames(f); } catch { toast("Video saved. AI descriptions couldn't be generated."); }
+      try {
+        let thumb: Blob;
+        try { thumb = await extractThumb(f); }
+        catch {
+          const first = frames[0]?.[0];
+          if (!first) throw new Error("no frame");
+          thumb = await (await fetch(first)).blob();
+        }
+        const thumbPath = path.replace(/\.[^.]+$/, "") + "-thumb.jpg";
+        const tu = await supabase.storage.from("videos").upload(thumbPath, thumb, { contentType: "image/jpeg", upsert: true });
+        if (tu.error) throw tu.error;
+        const ur = await supabase.from("videos").update({ thumb_path: thumbPath }).eq("id", v.id);
+        if (ur.error) throw ur.error;
+      } catch (e) {
+        console.error("thumbnail failed", e);
+      }
+      await reload();
       let prevTitle: string | undefined;
       for (let i = 0; i < frames.length; i++) {
         setBusy(`AI writing part ${i + 1} of ${frames.length}…`);
