@@ -160,7 +160,7 @@ export async function forYou(userId?: string): Promise<Vid[]> {
       };
       const score = (Object.keys(W) as (keyof typeof W)[]).reduce((a, k) => a + W[k] * pred[k], 0);
       const reason =
-        aff > 1 ? "From a creator you enjoy" : sim > 0.15 ? "Matches your interests" : hasHistory && popularity > 1 ? "Popular on Xorost" : fresh > 0.7 ? "New on Xorost" : "Popular on Xorost";
+        cf > 0.5 ? "Liked by viewers like you" : aff > 1 ? "From a creator you enjoy" : sim > 0.15 ? "Matches your interests" : hasHistory && popularity > 1 ? "Popular on Xorost" : fresh > 0.7 ? "New on Xorost" : "Popular on Xorost";
       return { v: { ...v, reason }, score, sim, quality };
     })
     .sort((a, b) => b.score - a.score);
