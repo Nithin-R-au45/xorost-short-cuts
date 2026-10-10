@@ -4,6 +4,7 @@ import { pill, useSession } from "@/lib/session";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Player } from "@/components/Player";
+import { ProfileMenu } from "@/components/ProfileMenu";
 import { extractFrames, type Vid } from "@/lib/videos";
 import { forYou } from "@/lib/recommend";
 import { embedVideo, generateSegment } from "@/lib/segments.functions";
@@ -80,12 +81,7 @@ function Index() {
         <input type="file" accept="video/*" className="hidden" disabled={!!busy} onChange={(e) => onUpload(e.target.files?.[0])} />
       </label>
       {session ? (
-        <>
-          <Link to="/saved" onClick={(e) => e.stopPropagation()} className={pill}>Saved</Link>
-          <button onClick={(e) => { e.stopPropagation(); supabase.auth.signOut(); }} className={pill} title={session.user.email ?? undefined}>
-            Sign out
-          </button>
-        </>
+        <ProfileMenu session={session} />
       ) : (
         <Link to="/auth" onClick={(e) => e.stopPropagation()} className={pill}>Sign in</Link>
       )}

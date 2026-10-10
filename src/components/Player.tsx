@@ -29,11 +29,14 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
   const video = videos[vi];
 
   const nextPart = (d: number) => {
-    setPart((p) => {
-      const n = p + d;
-      if (n < 0 || n >= parts) return p;
-      return n;
-    });
+    const n = part + d;
+    if (n < 0) return;
+    if (n >= parts) {
+      // past the last part — roll into the next video, TikTok-style
+      nextVideo(1);
+      return;
+    }
+    setPart(n);
   };
   const nextVideo = (d: number) => {
     if (!videos.length) return;
@@ -63,8 +66,13 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
     const end = Math.min(start + SEG, duration || Infinity);
     setProgress(Math.min(1, (el.currentTime - start) / (end - start)));
     if (el.currentTime >= end - 0.05) {
-      el.pause();
       if (!ended && session && video?.id) recordView(session.user.id, video.id, part, end - start).catch(() => {});
+      if (part + 1 >= parts) {
+        // last part finished — keep the feed going
+        nextVideo(1);
+        return;
+      }
+      el.pause();
       setEnded(true);
     }
   };
@@ -185,17 +193,8 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
 
         {ended && !showHint && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-overlay text-center">
-            {part + 1 < parts ? (
-              <>
-                <p className="animate-hint font-display text-5xl">←</p>
-                <p className="font-display text-xl font-semibold">Swipe left for Part {part + 2}</p>
-              </>
-            ) : (
-              <>
-                <p className="font-display text-5xl">↑</p>
-                <p className="font-display text-xl font-semibold">The end — swipe up for a new video</p>
-              </>
-            )}
+            <p className="animate-hint font-display text-5xl">←</p>
+            <p className="font-display text-xl font-semibold">Swipe left for Part {part + 2}</p>
           </div>
         )}
         </>
