@@ -17,6 +17,7 @@ export function SocialBar({ videoKey, title, session, authorId }: { videoKey: st
   const [comments, setComments] = useState<Comment[]>([]);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
+  const [following, setFollowing] = useState(false);
 
   const load = async () => {
     const { data: r } = await supabase.from("reactions").select("user_id,value").eq("video_key", videoKey);
@@ -28,6 +29,10 @@ export function SocialBar({ videoKey, title, session, authorId }: { videoKey: st
     if (uid) {
       const { data: s } = await supabase.from("saves").select("video_key").eq("video_key", videoKey).maybeSingle();
       setSaved(!!s);
+      if (authorId && authorId !== uid) {
+        const { data: f } = await supabase.from("follows").select("followee_id").eq("follower_id", uid).eq("followee_id", authorId).maybeSingle();
+        setFollowing(!!f);
+      }
     } else setSaved(false);
   };
   useEffect(() => {
