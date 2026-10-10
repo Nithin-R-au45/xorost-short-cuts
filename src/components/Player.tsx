@@ -193,17 +193,8 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
 
         {ended && !showHint && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-overlay text-center">
-            {part + 1 < parts ? (
-              <>
-                <p className="animate-hint font-display text-5xl">←</p>
-                <p className="font-display text-xl font-semibold">Swipe left for Part {part + 2}</p>
-              </>
-            ) : (
-              <>
-                <p className="font-display text-5xl">↑</p>
-                <p className="font-display text-xl font-semibold">The end — swipe up for a new video</p>
-              </>
-            )}
+            <p className="animate-hint font-display text-5xl">←</p>
+            <p className="font-display text-xl font-semibold">Swipe left for Part {part + 2}</p>
           </div>
         )}
         </>
