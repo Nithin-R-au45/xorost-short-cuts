@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CircleUserRound, Bookmark, LogOut, ArrowLeft, Pencil, Trash2, Check, X, Play } from "lucide-react";
+import { CircleUserRound, Bookmark, LogOut, ArrowLeft, Pencil, Trash2, Check, X, Play, MessageCircle } from "lucide-react";
 import { Player } from "@/components/Player";
 import { fetchVideos, type Vid } from "@/lib/videos";
 import { useEffect, useState } from "react";
