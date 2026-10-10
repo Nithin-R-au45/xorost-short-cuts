@@ -9,6 +9,11 @@ import { ProfileMenu } from "@/components/ProfileMenu";
 import { extractFrames, extractThumb, type Vid } from "@/lib/videos";
 import { forYou } from "@/lib/recommend";
 import { embedVideo, generateSegment } from "@/lib/segments.functions";
+import { Button } from "@/components/ui/button";
+import { UploadDialog } from "@/components/UploadDialog";
+import { Upload } from "lucide-react";
+import { readVideoDuration, uploadDetailsSchema, type UploadDetails } from "@/lib/upload";
+import { registerVideo } from "@/lib/upload.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,6 +33,7 @@ function Index() {
   const session = useSession();
   const [videos, setVideos] = useState<Vid[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const uid = session?.user.id;
   const reload = () => forYou(uid).then(setVideos);
@@ -36,22 +42,24 @@ function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
-  const onUpload = async (f?: File) => {
-    if (!f) return;
+  const onUpload = async (f: File, details: UploadDetails): Promise<boolean> => {
     if (!session) {
       toast("Sign in to upload videos");
-      return;
+      return false;
     }
+    let uploadedPath: string | null = null;
+    let registered = false;
     try {
-      const title = f.name.replace(/\.[^.]+$/, "").slice(0, 200) || "Untitled";
+      const validated = uploadDetailsSchema.parse({ ...details, size: f.size, duration: await readVideoDuration(f) });
       setBusy("Uploading…");
-      const path = `${session.user.id}/${crypto.randomUUID()}-${f.name.replace(/[^\w.-]/g, "_")}`;
+      const path = `${session.user.id}/${crypto.randomUUID()}-${f.name.replace(/[^\w.-]/g, "_").slice(-180)}`;
       const ext = f.name.split(".").pop()?.toLowerCase();
       const contentType = f.type || (ext === "mov" ? "video/quicktime" : ext === "webm" ? "video/webm" : "video/mp4");
       const up = await supabase.storage.from("videos").upload(path, f, { contentType });
       if (up.error) throw up.error;
-      const { data: v, error } = await supabase.from("videos").insert({ user_id: session.user.id, title, path }).select("id").single();
-      if (error) throw error;
+      uploadedPath = path;
+      const v = await registerVideo({ data: { ...validated, path } });
+      registered = true;
       try {
         const thumb = await extractThumb(f);
         const thumbPath = path.replace(/\.[^.]+$/, "") + "-thumb.jpg";
@@ -62,12 +70,15 @@ function Index() {
       }
       await reload();
       setBusy("Reading video…");
-      const frames = await extractFrames(f);
+      let frames: string[][] = [];
+      try { frames = await extractFrames(f); } catch { toast("Video saved. AI descriptions couldn't be generated."); }
       let prevTitle: string | undefined;
       for (let i = 0; i < frames.length; i++) {
         setBusy(`AI writing part ${i + 1} of ${frames.length}…`);
         try {
-          const seg = await generateSegment({ data: { videoId: v.id, idx: i, frames: frames[i]!, prevTitle } });
+          const partFrames = frames[i];
+          if (!partFrames) continue;
+          const seg = await generateSegment({ data: { videoId: v.id, idx: i, frames: partFrames, prevTitle } });
           prevTitle = seg.title;
         } catch (e) {
           toast.error(`AI couldn't describe part ${i + 1}: ${(e as Error).message}`);
@@ -77,8 +88,11 @@ function Index() {
       await embedVideo({ data: { videoId: v.id } }).catch(() => {});
       await reload();
       toast.success("Video ready");
+      return true;
     } catch (e) {
+      if (uploadedPath && !registered) await supabase.storage.from("videos").remove([uploadedPath]);
       toast.error((e as Error).message || "Upload failed");
+      return false;
     } finally {
       setBusy(null);
     }
@@ -87,26 +101,19 @@ function Index() {
   const header = (
     <>
       {busy && <span className="rounded-full bg-background/70 px-3 py-1.5 text-xs">{busy}</span>}
-      <label
-        className="cursor-pointer touch-manipulation rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-        onClick={(e) => e.stopPropagation()}
+      <Button
+        size="sm"
+        className="touch-manipulation rounded-md"
+        disabled={!!busy}
+        onClick={(e) => { e.stopPropagation(); setUploadOpen(true); }}
         onPointerDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onMouseUp={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >
-        + Upload
-        <input
-          type="file"
-          accept="video/*,.mov,.mp4,.m4v,.webm,.3gp"
-          className="sr-only"
-          disabled={!!busy}
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            e.target.value = "";
-            onUpload(f);
-          }}
-        />
-      </label>
+        <Upload /> Upload
+      </Button>
       {session ? (
         <>
           <NotificationBell uid={session.user.id} />
@@ -119,6 +126,7 @@ function Index() {
   );
 
   return (
+    <>
     <Player
       videos={videos}
       session={session}
@@ -126,12 +134,11 @@ function Index() {
       empty={
         <>
           <div className="flex flex-wrap items-center justify-center gap-2">{header}</div>
-          <p className="font-display text-2xl font-semibold">No videos yet</p>
-          <p className="max-w-xs text-sm text-muted-foreground">
-            Upload a long video — Xorost plays it one minute at a time, with an AI title and summary for each part.
-          </p>
+          <p className="font-display text-base font-semibold">No videos yet</p>
         </>
       }
     />
+    <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} signedIn={!!session} busy={busy} onUpload={onUpload} />
+    </>
   );
 }
