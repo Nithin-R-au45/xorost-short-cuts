@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CircleUserRound, Bookmark, LogOut, ArrowLeft, Pencil, Trash2, Check, X } from "lucide-react";
+import { CircleUserRound, Bookmark, LogOut, ArrowLeft, Pencil, Trash2, Check, X, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSession, pill } from "@/lib/session";
@@ -28,6 +28,7 @@ function ProfilePage() {
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
   const [videos, setVideos] = useState<MyVideo[]>([]);
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
 
@@ -41,6 +42,16 @@ function ProfilePage() {
     setFollowers(fr ?? 0);
     setFollowing(fg ?? 0);
     setVideos(v ?? []);
+    if (v?.length) {
+      const { data: signed } = await supabase.storage.from("videos").createSignedUrls(v.map((x) => x.path), 60 * 60 * 6);
+      const m: Record<string, string> = {};
+      v.forEach((x, i) => {
+        if (signed?.[i]?.signedUrl) m[x.id] = signed[i].signedUrl;
+      });
+      setThumbs(m);
+    } else {
+      setThumbs({});
+    }
   };
   useEffect(() => {
     load();
@@ -126,7 +137,25 @@ function ProfilePage() {
                 </p>
               )}
               {videos.map((v) => (
-                <div key={v.id} className="flex items-center gap-2 rounded-2xl border border-border bg-card p-3">
+                <div key={v.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
+                  <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
+                    {thumbs[v.id] ? (
+                      <video
+                        src={thumbs[v.id] + "#t=1"}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                        <CircleUserRound size={20} />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center bg-overlay/40">
+                      <Play size={18} className="text-foreground" />
+                    </div>
+                  </div>
                   {editing === v.id ? (
                     <>
                       <input
