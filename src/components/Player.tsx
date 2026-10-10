@@ -69,7 +69,10 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
       if (!ended && session && video?.id) recordView(session.user.id, video.id, part, end - start).catch(() => {});
       if (part + 1 >= parts) {
         // last part finished — loop the same video from the start
+        el.currentTime = 0;
+        setProgress(0);
         setPart(0);
+        el.play().catch(() => {});
         return;
       }
       el.pause();
