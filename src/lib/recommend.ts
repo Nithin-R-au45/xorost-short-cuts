@@ -7,6 +7,9 @@
  *  3. Filters — your own disliked videos, fully watched videos sink.
  *  4. Scoring — predict per-action probabilities, blend with weights.
  *  5. Author diversity — repeated creators are attenuated.
+ * Also borrows from justin-theodorus/for-you (user embedding = centroid of engaged
+ * videos, cosine similarity) and ChitviJoshi/Post_Recommendation_System
+ * (interest + popularity + a ~1-in-7 discovery slot for new topics).
  */
 import { supabase } from "@/integrations/supabase/client";
 import { fetchVideos, type Vid } from "@/lib/videos";
@@ -78,6 +81,19 @@ export async function forYou(userId?: string): Promise<Vid[]> {
     for (const t of new Set(tokens(textOf(v)))) interest.set(t, (interest.get(t) ?? 0) + s);
     if (v.userId && v.userId !== userId) affinity.set(v.userId, (affinity.get(v.userId) ?? 0) + s);
   }
+  // Semantic user embedding: signal-weighted centroid of engaged videos
+  let centroid: number[] | null = null;
+  for (const v of videos) {
+    const s = signal(v);
+    if (!s || !v.embedding?.length || v.userId === userId) continue;
+    centroid ??= new Array(v.embedding.length).fill(0);
+    v.embedding.forEach((x, i) => (centroid![i] = (centroid![i] ?? 0) + x * s));
+  }
+  const cos = (a: number[], b: number[]) => {
+    let d = 0, na = 0, nb = 0;
+    for (let i = 0; i < a.length; i++) { d += a[i]! * (b[i] ?? 0); na += a[i]! ** 2; nb += (b[i] ?? 0) ** 2; }
+    return na && nb ? d / Math.sqrt(na * nb) : 0;
+  };
   const norm = Math.sqrt([...interest.values()].reduce((a, b) => a + b * b, 0)) || 1;
   const hasHistory = interest.size > 0;
 
@@ -88,6 +104,8 @@ export async function forYou(userId?: string): Promise<Vid[]> {
       let sim = 0;
       for (const t of toks) sim += interest.get(t) ?? 0;
       sim = sim / norm / Math.sqrt(toks.size || 1);
+      const semantic = centroid && v.embedding?.length ? Math.max(0, cos(centroid, v.embedding)) : null;
+      if (semantic !== null) sim = 0.7 * semantic + 0.3 * sim;
       const aff = affinity.get(v.userId ?? "") ?? 0;
       const p = popMap.get(v.id!);
       const likes = likeCount.get(v.key) ?? 0;
@@ -111,7 +129,7 @@ export async function forYou(userId?: string): Promise<Vid[]> {
       const score = (Object.keys(W) as (keyof typeof W)[]).reduce((a, k) => a + W[k] * pred[k], 0);
       const reason =
         aff > 1 ? "From a creator you enjoy" : sim > 0.15 ? "Matches your interests" : hasHistory && popularity > 1 ? "Popular on Xorost" : fresh > 0.7 ? "New on Xorost" : "Popular on Xorost";
-      return { v: { ...v, reason }, score };
+      return { v: { ...v, reason }, score, sim, quality };
     })
     .sort((a, b) => b.score - a.score);
 
@@ -123,10 +141,26 @@ export async function forYou(userId?: string): Promise<Vid[]> {
       seenAuthors.set(s.v.userId ?? "", n + 1);
       return { ...s, score: s.score * Math.pow(AUTHOR_DECAY, n) };
     })
-    .sort((a, b) => b.score - a.score)
-    .map((s) => s.v);
+    .sort((a, b) => b.score - a.score);
   void byKey;
-  return out;
+  if (!hasHistory) return out.map((s) => s.v);
+
+  // Discovery: every 7th slot goes to a well-liked video outside your usual topics
+  const discovery = out.filter((s) => s.sim < 0.1 && s.quality >= 0.5);
+  const used = new Set<string>();
+  const final: Vid[] = [];
+  const main = out.filter((s) => !discovery.slice(0, Math.floor(out.length / 7)).includes(s));
+  let di = 0;
+  for (const s of main) {
+    if (final.length % 7 === 6 && di < discovery.length) {
+      const d = discovery[di++]!;
+      final.push({ ...d.v, reason: "Something new to explore" });
+      used.add(d.v.key);
+    }
+    if (!used.has(s.v.key)) final.push(s.v), used.add(s.v.key);
+  }
+  for (const d of discovery) if (!used.has(d.v.key)) final.push(d.v);
+  return final;
 }
 
 export async function recordView(userId: string, videoId: string, part: number, seconds: number) {
