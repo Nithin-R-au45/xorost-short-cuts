@@ -33,16 +33,43 @@ function AuthPage() {
     setMsg(null);
     if (mode === "signin") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setMsg(error.message);
-      else navigate({ to: "/" });
+      if (!error) {
+        navigate({ to: "/" });
+      } else if (error.message.toLowerCase().includes("invalid login")) {
+        // No password account yet — create one on the spot and sign in.
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin },
+        });
+        if (signUpError) {
+          setMsg(
+            signUpError.message.toLowerCase().includes("already registered")
+              ? "This email already has an account. Check your password and try again."
+              : signUpError.message,
+          );
+        } else {
+          navigate({ to: "/" });
+        }
+      } else {
+        setMsg(error.message);
+      }
     } else {
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: { emailRedirectTo: window.location.origin },
       });
-      if (error) setMsg(error.message);
-      else navigate({ to: "/" });
+      if (!error) {
+        navigate({ to: "/" });
+      } else if (error.message.toLowerCase().includes("already registered")) {
+        // Account exists — just sign in with the same password.
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) setMsg("This email already has an account. Check your password and try again.");
+        else navigate({ to: "/" });
+      } else {
+        setMsg(error.message);
+      }
     }
     setBusy(false);
   };
