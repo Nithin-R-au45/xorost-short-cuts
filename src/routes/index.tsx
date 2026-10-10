@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
+import { pill, useSession } from "@/lib/session";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Player } from "@/components/Player";
@@ -20,18 +20,6 @@ export const Route = createFileRoute("/")({
   }),
   component: Index,
 });
-
-export const pill = "rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm font-semibold";
-
-export function useSession() {
-  const [session, setSession] = useState<Session | null>(null);
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    return () => sub.subscription.unsubscribe();
-  }, []);
-  return session;
-}
 
 function Index() {
   const session = useSession();
