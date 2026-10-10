@@ -14,7 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      comments: {
+        Row: {
+          author: string
+          body: string
+          created_at: string
+          id: string
+          user_id: string
+          video_key: string
+        }
+        Insert: {
+          author?: string
+          body: string
+          created_at?: string
+          id?: string
+          user_id: string
+          video_key: string
+        }
+        Update: {
+          author?: string
+          body?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          video_key?: string
+        }
+        Relationships: []
+      }
+      reactions: {
+        Row: {
+          user_id: string
+          value: number
+          video_key: string
+        }
+        Insert: {
+          user_id: string
+          value: number
+          video_key: string
+        }
+        Update: {
+          user_id?: string
+          value?: number
+          video_key?: string
+        }
+        Relationships: []
+      }
+      saves: {
+        Row: {
+          created_at: string
+          user_id: string
+          video_key: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+          video_key: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+          video_key?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
