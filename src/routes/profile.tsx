@@ -77,7 +77,7 @@ function ProfilePage() {
       toast.error("Couldn't delete video");
       return;
     }
-    await supabase.storage.from("videos").remove([v.path]);
+    await supabase.storage.from("videos").remove(v.thumb_path ? [v.path, v.thumb_path] : [v.path]);
     toast("Video deleted");
     load();
   };
