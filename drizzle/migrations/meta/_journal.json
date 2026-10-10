@@ -43,6 +43,13 @@
       "when": 1791621048885,
       "tag": "0005_add_video_thumb_path",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791621223756,
+      "tag": "0006_profiles_notifications",
+      "breakpoints": true
     }
   ]
 }
