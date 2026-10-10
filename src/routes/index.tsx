@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Player } from "@/components/Player";
 import { extractFrames, type Vid } from "@/lib/videos";
 import { forYou } from "@/lib/recommend";
-import { generateSegment } from "@/lib/segments.functions";
+import { embedVideo, generateSegment } from "@/lib/segments.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -62,6 +62,7 @@ function Index() {
           break;
         }
       }
+      await embedVideo({ data: { videoId: v.id } }).catch(() => {});
       await reload();
       toast.success("Video ready");
     } catch (e) {
