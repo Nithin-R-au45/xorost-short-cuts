@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CircleUserRound, Bookmark, LogOut, ArrowLeft, Pencil, Trash2, Check, X, Play, MessageCircle } from "lucide-react";
+import { CircleUserRound, Bookmark, LogOut, ArrowLeft, Pencil, Trash2, Check, X, Play, MessageCircle, Eye } from "lucide-react";
 import { Player } from "@/components/Player";
 import { fetchVideos, type Vid } from "@/lib/videos";
 import { useEffect, useState } from "react";
@@ -36,6 +36,7 @@ function ProfilePage() {
   const [videos, setVideos] = useState<MyVideo[]>([]);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [playing, setPlaying] = useState<Vid[] | null>(null);
