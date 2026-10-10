@@ -147,8 +147,9 @@ export async function forYou(userId?: string): Promise<Vid[]> {
       const quality = (likes + 1) / (likes + dislikes + 2);
       const seen = viewMap.get(v.id!);
       const finished = seen && seen.max_part + 1 >= Math.max(1, v.segments?.length ?? 1);
+      const cf = cfScore(v.key);
 
-      const base = 2.5 * sim + 0.6 * Math.tanh(aff / 3) + 0.4 * popularity + 0.8 * fresh + (quality - 0.5) - (finished ? 3 : 0) - 2;
+      const base = 2.5 * sim + 2.0 * Math.tanh(cf) + 0.6 * Math.tanh(aff / 3) + 0.4 * popularity + 0.8 * fresh + (quality - 0.5) - (finished ? 3 : 0) - 2;
       const pred = {
         like: sig(base),
         save: sig(base - 0.8),
