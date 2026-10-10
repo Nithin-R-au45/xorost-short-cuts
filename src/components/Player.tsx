@@ -32,8 +32,8 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
     const n = part + d;
     if (n < 0) return;
     if (n >= parts) {
-      // past the last part — roll into the next video, TikTok-style
-      nextVideo(1);
+      // past the last part — loop the same video, TikTok-style
+      setPart(0);
       return;
     }
     setPart(n);
@@ -68,8 +68,8 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
     if (el.currentTime >= end - 0.05) {
       if (!ended && session && video?.id) recordView(session.user.id, video.id, part, end - start).catch(() => {});
       if (part + 1 >= parts) {
-        // last part finished — keep the feed going
-        nextVideo(1);
+        // last part finished — loop the same video from the start
+        setPart(0);
         return;
       }
       el.pause();
