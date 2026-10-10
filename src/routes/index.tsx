@@ -209,11 +209,19 @@ function Index() {
           </p>
           <h2 className="font-display text-3xl font-bold">{video.title}</h2>
           <p className="text-sm text-muted-foreground">
-            {fmt(part * SEG)} – {fmt(Math.min((part + 1) * SEG, duration))} · Swipe ← next part · Swipe ↑ new video
+            {fmt(part * SEG)} – {fmt(Math.min((part + 1) * SEG, duration))}
           </p>
         </div>
 
-        {ended && (
+        {showHint && (
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-overlay text-center">
+            <p className="font-display text-xl font-semibold">How Xorost works</p>
+            <p className="text-sm text-muted-foreground">Swipe or drag ← for the next part · ↑ for a new video</p>
+            <p className="text-xs text-muted-foreground">Tap anywhere to start</p>
+          </div>
+        )}
+
+        {ended && !showHint && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-overlay text-center">
             {part + 1 < parts ? (
               <>
