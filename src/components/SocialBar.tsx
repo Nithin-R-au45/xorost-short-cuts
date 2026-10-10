@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { Session } from "@supabase/supabase-js";
-import { Heart, ThumbsDown, Share2, MessageCircle, Bookmark, X } from "lucide-react";
+import { Heart, ThumbsDown, Share2, MessageCircle, Bookmark, X, UserPlus, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 type Comment = { id: string; author: string; body: string; created_at: string; user_id: string };
 
-export function SocialBar({ videoKey, title, session }: { videoKey: string; title: string; session: Session | null }) {
+export function SocialBar({ videoKey, title, session, authorId }: { videoKey: string; title: string; session: Session | null; authorId?: string | undefined }) {
   const nav = useNavigate();
   const uid = session?.user.id;
   const [likes, setLikes] = useState(0);
@@ -17,6 +17,7 @@ export function SocialBar({ videoKey, title, session }: { videoKey: string; titl
   const [comments, setComments] = useState<Comment[]>([]);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
+  const [following, setFollowing] = useState(false);
 
   const load = async () => {
     const { data: r } = await supabase.from("reactions").select("user_id,value").eq("video_key", videoKey);
@@ -28,6 +29,10 @@ export function SocialBar({ videoKey, title, session }: { videoKey: string; titl
     if (uid) {
       const { data: s } = await supabase.from("saves").select("video_key").eq("video_key", videoKey).maybeSingle();
       setSaved(!!s);
+      if (authorId && authorId !== uid) {
+        const { data: f } = await supabase.from("follows").select("followee_id").eq("follower_id", uid).eq("followee_id", authorId).maybeSingle();
+        setFollowing(!!f);
+      }
     } else setSaved(false);
   };
   useEffect(() => {
@@ -54,6 +59,13 @@ export function SocialBar({ videoKey, title, session }: { videoKey: string; titl
     else await supabase.from("saves").insert({ user_id: uid!, video_key: videoKey });
     toast(saved ? "Removed from saved" : "Saved");
     load();
+  };
+  const toggleFollow = async () => {
+    if (need() || !authorId) return;
+    if (following) await supabase.from("follows").delete().eq("follower_id", uid!).eq("followee_id", authorId);
+    else await supabase.from("follows").insert({ follower_id: uid!, followee_id: authorId });
+    toast(following ? "Unfollowed" : "Following");
+    setFollowing(!following);
   };
   const share = async () => {
     const url = window.location.href;
@@ -102,6 +114,9 @@ export function SocialBar({ videoKey, title, session }: { videoKey: string; titl
         <Btn on={() => setOpen(true)} icon={<MessageCircle />} label={comments.length} />
         <Btn on={toggleSave} active={saved} icon={<Bookmark className={saved ? "fill-current" : ""} />} label={saved ? "Saved" : "Save"} />
         <Btn on={share} icon={<Share2 />} label="Share" />
+        {authorId && authorId !== uid && (
+          <Btn on={toggleFollow} active={following} icon={following ? <UserCheck /> : <UserPlus />} label={following ? "Following" : "Follow"} />
+        )}
       </div>
 
       {open && (

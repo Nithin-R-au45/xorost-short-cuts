@@ -181,7 +181,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
           </p>
         </div>
 
-        <SocialBar videoKey={video.key} title={video.title} session={session} />
+        <SocialBar videoKey={video.key} title={video.title} session={session} authorId={video.userId} />
 
         {showHint && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-overlay text-center">
