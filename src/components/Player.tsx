@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { SocialBar } from "@/components/SocialBar";
 import { SEG, type Vid } from "@/lib/videos";
 import { recordView } from "@/lib/recommend";
+import { Button } from "@/components/ui/button";
 
 export function Player({ videos, session, headerRight, empty }: { videos: Vid[]; session: Session | null; headerRight: ReactNode; empty: ReactNode }) {
   const [vi, setVi] = useState(0);
@@ -32,6 +33,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
 
   const parts = Math.max(1, Math.ceil(duration / SEG));
   const video = videos[vi];
+  const description = [video?.description, video?.segments?.[part]?.summary].filter(Boolean).join("\n\n");
 
   const nextPart = (d: number) => {
     const n = part + d;
@@ -92,7 +94,8 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
   };
 
   const onTime = () => {
-    const el = ref.current!;
+    const el = ref.current;
+    if (!el) return;
     const start = part * SEG;
     const end = Math.min(start + SEG, duration || Infinity);
     setProgress(Math.min(1, (el.currentTime - start) / (end - start)));
@@ -109,6 +112,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
+      if (document.querySelector('[role="dialog"]') || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === "ArrowLeft") swipe(-100, 0);
       if (e.key === "ArrowRight") swipe(100, 0);
       if (e.key === "ArrowUp") swipe(0, -100);
@@ -137,7 +141,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
       return;
     }
     if (!expanded) setOverflowing(el.scrollHeight > el.clientHeight + 4);
-  }, [video?.id, part, expanded, duration]);
+  }, [video?.id, part, expanded, duration, description]);
 
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
@@ -185,7 +189,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
         {/* header */}
         <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-overlay to-transparent p-4">
           <div className="flex items-center justify-between">
-            <h1 className="font-display text-2xl font-bold tracking-tight">
+            <h1 className="font-display text-lg font-bold">
               Xoro<span className="text-foreground">st</span>
             </h1>
             <div className="pointer-events-auto flex items-center gap-2">
@@ -202,35 +206,36 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
         </div>
 
         {/* footer */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-overlay to-transparent p-5 pb-8">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-overlay to-transparent p-4 pb-6">
           {video.reason && <p className="mb-1 text-xs text-muted-foreground">✦ {video.reason}</p>}
-          <p className="font-display text-sm uppercase tracking-widest text-primary">
+          <p className="text-xs font-medium text-primary">
             Part {part + 1} of {duration ? parts : "…"}
           </p>
-          <h2 className="font-display text-3xl font-bold">{video.title}</h2>
-          {video.segments?.[part] && (
+          <h2 className="mt-1 max-w-[80%] break-words text-base font-semibold leading-snug">{video.title}</h2>
+          {(description || video.segments?.[part]) && (
             <div className="mt-1 max-w-[80%]">
-              <p className="font-semibold">{video.segments[part].title}</p>
-              <p ref={summaryRef} className={`text-sm text-muted-foreground ${expanded ? "" : "line-clamp-2"}`}>
-                {video.segments[part].summary}
+              {video.segments?.[part] && <p className="break-words text-xs font-medium">{video.segments[part].title}</p>}
+              <p ref={summaryRef} className={`whitespace-pre-line break-words text-xs leading-relaxed text-muted-foreground ${expanded ? "pointer-events-auto max-h-[30dvh] overflow-y-auto" : "line-clamp-2"}`} onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onMouseUp={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
+                {description}
               </p>
               {overflowing && (
-                <button
+                <Button
                   type="button"
+                  variant="link"
                   onClick={() => setExpanded((v) => !v)}
                   onMouseDown={(e) => e.stopPropagation()}
                   onMouseUp={(e) => e.stopPropagation()}
                   onTouchStart={(e) => e.stopPropagation()}
                   onTouchEnd={(e) => e.stopPropagation()}
-                  className="pointer-events-auto mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary"
+                  className="pointer-events-auto mt-1 h-6 gap-1 p-0 text-xs font-semibold"
                 >
                   {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   {expanded ? "Show less" : "Show more"}
-                </button>
+                </Button>
               )}
             </div>
           )}
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-1 text-[11px] text-muted-foreground">
             {fmt(part * SEG)} – {fmt(Math.min((part + 1) * SEG, duration))}
           </p>
         </div>

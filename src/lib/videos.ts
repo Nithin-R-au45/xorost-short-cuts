@@ -2,10 +2,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const SEG = 60;
 export type Segment = { idx: number; title: string; summary: string };
-export type Vid = { id?: string; title: string; src: string; key: string; segments?: Segment[]; userId?: string; createdAt?: string; reason?: string; embedding?: number[] | null };
+export type Vid = { id?: string; title: string; description?: string; src: string; key: string; segments?: Segment[]; userId?: string; createdAt?: string; reason?: string; embedding?: number[] | null };
 
 export async function fetchVideos(ids?: string[]): Promise<Vid[]> {
-  let q = supabase.from("videos").select("id,title,path,user_id,created_at,embedding,video_segments(idx,title,summary)").order("created_at", { ascending: false }).limit(200);
+  let q = supabase.from("videos").select("id,title,description,path,user_id,created_at,embedding,video_segments(idx,title,summary)").order("created_at", { ascending: false }).limit(200);
   if (ids) {
     if (!ids.length) return [];
     q = q.in("id", ids);
@@ -16,6 +16,7 @@ export async function fetchVideos(ids?: string[]): Promise<Vid[]> {
   return data.map((d, i) => ({
     id: d.id,
     title: d.title,
+    description: d.description,
     src: signed?.[i]?.signedUrl ?? "",
     key: "vid:" + d.id,
     userId: d.user_id,
