@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CircleUserRound, Bookmark, LogOut, ArrowLeft, Pencil, Trash2, Check, X } from "lucide-react";
+import { CircleUserRound, Bookmark, LogOut, ArrowLeft, Pencil, Trash2, Check, X, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSession, pill } from "@/lib/session";
