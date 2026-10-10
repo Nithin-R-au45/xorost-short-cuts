@@ -115,11 +115,17 @@ function Index() {
           if (Math.max(Math.abs(dx), Math.abs(dy)) > 40) swipe(dx, dy);
           else ref.current && (ref.current.paused ? ref.current.play() : ref.current.pause());
         }}
-        onWheel={(e) => Math.max(Math.abs(e.deltaX), Math.abs(e.deltaY)) > 30 && swipe(-e.deltaX, -e.deltaY)}
-        onClick={(e) => {
-          if (e.detail && !("ontouchstart" in window) && ref.current)
-            ref.current.paused ? ref.current.play() : ref.current.pause();
+        onMouseDown={(e) => (touch.current = { x: e.clientX, y: e.clientY })}
+        onMouseUp={(e) => {
+          if (!touch.current) return;
+          const dx = e.clientX - touch.current.x;
+          const dy = e.clientY - touch.current.y;
+          touch.current = null;
+          if (Math.max(Math.abs(dx), Math.abs(dy)) > 40) swipe(dx, dy);
+          else ref.current && (ref.current.paused ? ref.current.play() : ref.current.pause());
         }}
+        onMouseLeave={() => (touch.current = null)}
+        onWheel={(e) => Math.max(Math.abs(e.deltaX), Math.abs(e.deltaY)) > 30 && swipe(-e.deltaX, -e.deltaY)}
       >
         <video
           key={video.src}
