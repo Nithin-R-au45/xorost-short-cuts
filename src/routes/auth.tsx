@@ -39,7 +39,7 @@ function AuthPage() {
         options: { emailRedirectTo: window.location.origin },
       });
       if (error) setMsg(error.message);
-      else setMsg("Check your email to confirm your account, then sign in.");
+      else navigate({ to: "/" });
     }
     setBusy(false);
   };
@@ -68,7 +68,6 @@ function AuthPage() {
           <input
             type="password"
             required
-            minLength={6}
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
