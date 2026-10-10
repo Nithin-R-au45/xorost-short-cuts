@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
@@ -23,6 +24,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [show, setShow] = useState(false);
+  const ready = email.trim().length > 0 && password.length > 0;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,18 +68,29 @@ function AuthPage() {
             onChange={(e) => setEmail(e.target.value)}
             className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
           />
-          <input
-            type="password"
-            required
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
-          />
+          <div className="relative">
+            <input
+              type={show ? "text" : "password"}
+              required
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-11 text-sm outline-none focus:border-primary"
+            />
+            <button
+              type="button"
+              onClick={() => setShow((s) => !s)}
+              aria-label={show ? "Hide password" : "View password"}
+              title={show ? "Hide password" : "View password"}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground hover:text-foreground"
+            >
+              {show ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
           <button
             type="submit"
-            disabled={busy}
-            className="rounded-full bg-primary py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            disabled={busy || !ready}
+            className="rounded-full bg-primary py-2.5 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
             {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Sign up"}
           </button>
