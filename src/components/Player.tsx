@@ -29,11 +29,14 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
   const video = videos[vi];
 
   const nextPart = (d: number) => {
-    setPart((p) => {
-      const n = p + d;
-      if (n < 0 || n >= parts) return p;
-      return n;
-    });
+    const n = part + d;
+    if (n < 0) return;
+    if (n >= parts) {
+      // past the last part — roll into the next video, TikTok-style
+      nextVideo(1);
+      return;
+    }
+    setPart(n);
   };
   const nextVideo = (d: number) => {
     if (!videos.length) return;
@@ -63,8 +66,13 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
     const end = Math.min(start + SEG, duration || Infinity);
     setProgress(Math.min(1, (el.currentTime - start) / (end - start)));
     if (el.currentTime >= end - 0.05) {
-      el.pause();
       if (!ended && session && video?.id) recordView(session.user.id, video.id, part, end - start).catch(() => {});
+      if (part + 1 >= parts) {
+        // last part finished — keep the feed going
+        nextVideo(1);
+        return;
+      }
+      el.pause();
       setEnded(true);
     }
   };
