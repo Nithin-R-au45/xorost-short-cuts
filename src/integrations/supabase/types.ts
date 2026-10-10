@@ -141,6 +141,7 @@ export type Database = {
       videos: {
         Row: {
           created_at: string
+          embedding: number[] | null
           id: string
           path: string
           title: string
@@ -148,6 +149,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          embedding?: number[] | null
           id?: string
           path: string
           title: string
@@ -155,6 +157,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          embedding?: number[] | null
           id?: string
           path?: string
           title?: string
