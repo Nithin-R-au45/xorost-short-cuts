@@ -186,6 +186,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
           autoPlay
           onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
           onTimeUpdate={onTime}
+          onEnded={advance}
         />
 
         {/* header */}
