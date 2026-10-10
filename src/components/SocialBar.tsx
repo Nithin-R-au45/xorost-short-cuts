@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type Comment = { id: string; author: string; body: string; created_at: string; user_id: string };
 
-export function SocialBar({ videoKey, title, session, authorId }: { videoKey: string; title: string; session: Session | null; authorId?: string }) {
+export function SocialBar({ videoKey, title, session, authorId }: { videoKey: string; title: string; session: Session | null; authorId?: string | undefined }) {
   const nav = useNavigate();
   const uid = session?.user.id;
   const [likes, setLikes] = useState(0);
