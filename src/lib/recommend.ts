@@ -64,6 +64,32 @@ export async function forYou(userId?: string): Promise<Vid[]> {
     if (c.user_id === userId) myComments.add(c.video_key);
   }
 
+  // Collaborative filtering (SAR-style): user → positive items, from likes, saves,
+  // comments and meaningful watch time. Views use video id; map to video key.
+  const idToKey = new Map(videos.map((v) => [v.id, v.key]));
+  const userItems = new Map<string, Set<string>>();
+  const addPos = (uid: string, key: string) => {
+    if (!userItems.has(uid)) userItems.set(uid, new Set());
+    userItems.get(uid)!.add(key);
+  };
+  for (const r of reacts ?? []) if (r.value > 0) addPos(r.user_id, r.video_key);
+  for (const s of allSaves ?? []) addPos(s.user_id, s.video_key);
+  for (const c of comments ?? []) addPos(c.user_id, c.video_key);
+  for (const w of allViews ?? []) if ((w.seconds ?? 0) >= 30 && idToKey.has(w.video_id)) addPos(w.user_id, idToKey.get(w.video_id)!);
+  const myItems = userItems.get(userId ?? "") ?? new Set<string>();
+  // User similarity = Jaccard overlap of positive items with the viewer
+  const cfScore = (key: string): number => {
+    if (!myItems.size) return 0;
+    let s = 0;
+    for (const [uid, items] of userItems) {
+      if (uid === userId || !items.has(key)) continue;
+      let inter = 0;
+      for (const k of myItems) if (items.has(k)) inter++;
+      if (inter) s += inter / Math.sqrt(myItems.size * items.size);
+    }
+    return s;
+  };
+
   // Engagement history → per-video signal strength (positive or negative)
   const signal = (v: Vid) => {
     const w = viewMap.get(v.id!);
