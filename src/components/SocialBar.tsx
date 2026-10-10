@@ -71,7 +71,10 @@ export function SocialBar({ videoKey, title, session }: { videoKey: string; titl
     if (need() || !text.trim()) return;
     const author = session!.user.email?.split("@")[0] ?? "user";
     const { error } = await supabase.from("comments").insert({ user_id: uid!, author, video_key: videoKey, body: text.trim().slice(0, 500) });
-    if (error) return toast.error("Couldn't post comment");
+    if (error) {
+      toast.error("Couldn't post comment");
+      return;
+    }
     setText("");
     load();
   };
