@@ -137,7 +137,25 @@ function ProfilePage() {
                 </p>
               )}
               {videos.map((v) => (
-                <div key={v.id} className="flex items-center gap-2 rounded-2xl border border-border bg-card p-3">
+                <div key={v.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
+                  <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
+                    {thumbs[v.id] ? (
+                      <video
+                        src={thumbs[v.id] + "#t=1"}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                        <CircleUserRound size={20} />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center bg-overlay/40">
+                      <Play size={18} className="text-foreground" />
+                    </div>
+                  </div>
                   {editing === v.id ? (
                     <>
                       <input
