@@ -72,30 +72,23 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [video?.id, part, session?.user.id]);
 
-  // move on when a part (or the whole video) finishes — TikTok-style
-  const advance = () => {
+  // when a part finishes, replay the same part — the next part only plays on swipe
+  const loopPart = () => {
     const el = ref.current;
     if (!el || advancing.current) return;
     advancing.current = true;
     const start = part * SEG;
     const end = Math.min(start + SEG, duration || Infinity);
     if (session && video?.id) recordView(session.user.id, video.id, part, end - start).catch(() => {});
-    if (part + 1 >= parts) {
-      // the whole video finished — restart it from the beginning, keep playing
-      el.currentTime = 0;
-      setProgress(0);
-      setPart(0);
-      el.play().catch(() => {});
-      advancing.current = false;
-      return;
-    }
-    // a part finished — roll straight into the next one, no stopping
-    if (!localStorage.getItem("xorost_seen_swipe")) {
+    el.currentTime = start;
+    setProgress(0);
+    el.play().catch(() => {});
+    if (!localStorage.getItem("xorost_seen_swipe") && part + 1 < parts) {
       localStorage.setItem("xorost_seen_swipe", "1");
       setShowSwipe(true);
       window.setTimeout(() => setShowSwipe(false), 2600);
     }
-    setPart(part + 1);
+    advancing.current = false;
   };
 
   const onTime = () => {
@@ -103,7 +96,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
     const start = part * SEG;
     const end = Math.min(start + SEG, duration || Infinity);
     setProgress(Math.min(1, (el.currentTime - start) / (end - start)));
-    if (el.currentTime >= end - 0.05) advance();
+    if (el.currentTime >= end - 0.05) loopPart();
   };
 
   const swipe = (dx: number, dy: number) => {
@@ -186,7 +179,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
           autoPlay
           onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
           onTimeUpdate={onTime}
-          onEnded={advance}
+          onEnded={loopPart}
         />
 
         {/* header */}
