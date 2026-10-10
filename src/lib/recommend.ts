@@ -8,8 +8,11 @@
  *  4. Scoring — predict per-action probabilities, blend with weights.
  *  5. Author diversity — repeated creators are attenuated.
  * Also borrows from justin-theodorus/for-you (user embedding = centroid of engaged
- * videos, cosine similarity) and ChitviJoshi/Post_Recommendation_System
- * (interest + popularity + a ~1-in-7 discovery slot for new topics).
+ * videos, cosine similarity), ChitviJoshi/Post_Recommendation_System
+ * (interest + popularity + a ~1-in-7 discovery slot for new topics), and
+ * recommenders-team/recommenders (SAR-style item-item collaborative filtering:
+ * score a video by how much users similar to you engaged with it, where user
+ * similarity is the Jaccard overlap of their positive items).
  */
 import { supabase } from "@/integrations/supabase/client";
 import { fetchVideos, type Vid } from "@/lib/videos";
@@ -25,11 +28,13 @@ const textOf = (v: Vid) => [v.title, ...(v.segments ?? []).flatMap((s) => [s.tit
 const sig = (x: number) => 1 / (1 + Math.exp(-x));
 
 export async function forYou(userId?: string): Promise<Vid[]> {
-  const [videos, { data: pop }, { data: reacts }, { data: comments }] = await Promise.all([
+  const [videos, { data: pop }, { data: reacts }, { data: comments }, { data: allSaves }, { data: allViews }] = await Promise.all([
     fetchVideos(),
     supabase.rpc("video_popularity"),
     supabase.from("reactions").select("user_id,video_key,value"),
     supabase.from("comments").select("user_id,video_key"),
+    supabase.from("saves").select("user_id,video_key"),
+    supabase.from("video_views").select("user_id,video_id,seconds"),
   ]);
   if (!videos.length) return [];
 
@@ -58,6 +63,32 @@ export async function forYou(userId?: string): Promise<Vid[]> {
     commentCount.set(c.video_key, (commentCount.get(c.video_key) ?? 0) + 1);
     if (c.user_id === userId) myComments.add(c.video_key);
   }
+
+  // Collaborative filtering (SAR-style): user → positive items, from likes, saves,
+  // comments and meaningful watch time. Views use video id; map to video key.
+  const idToKey = new Map(videos.map((v) => [v.id, v.key]));
+  const userItems = new Map<string, Set<string>>();
+  const addPos = (uid: string, key: string) => {
+    if (!userItems.has(uid)) userItems.set(uid, new Set());
+    userItems.get(uid)!.add(key);
+  };
+  for (const r of reacts ?? []) if (r.value > 0) addPos(r.user_id, r.video_key);
+  for (const s of allSaves ?? []) addPos(s.user_id, s.video_key);
+  for (const c of comments ?? []) addPos(c.user_id, c.video_key);
+  for (const w of allViews ?? []) if ((w.seconds ?? 0) >= 30 && idToKey.has(w.video_id)) addPos(w.user_id, idToKey.get(w.video_id)!);
+  const myItems = userItems.get(userId ?? "") ?? new Set<string>();
+  // User similarity = Jaccard overlap of positive items with the viewer
+  const cfScore = (key: string): number => {
+    if (!myItems.size) return 0;
+    let s = 0;
+    for (const [uid, items] of userItems) {
+      if (uid === userId || !items.has(key)) continue;
+      let inter = 0;
+      for (const k of myItems) if (items.has(k)) inter++;
+      if (inter) s += inter / Math.sqrt(myItems.size * items.size);
+    }
+    return s;
+  };
 
   // Engagement history → per-video signal strength (positive or negative)
   const signal = (v: Vid) => {
@@ -116,8 +147,9 @@ export async function forYou(userId?: string): Promise<Vid[]> {
       const quality = (likes + 1) / (likes + dislikes + 2);
       const seen = viewMap.get(v.id!);
       const finished = seen && seen.max_part + 1 >= Math.max(1, v.segments?.length ?? 1);
+      const cf = cfScore(v.key);
 
-      const base = 2.5 * sim + 0.6 * Math.tanh(aff / 3) + 0.4 * popularity + 0.8 * fresh + (quality - 0.5) - (finished ? 3 : 0) - 2;
+      const base = 2.5 * sim + 2.0 * Math.tanh(cf) + 0.6 * Math.tanh(aff / 3) + 0.4 * popularity + 0.8 * fresh + (quality - 0.5) - (finished ? 3 : 0) - 2;
       const pred = {
         like: sig(base),
         save: sig(base - 0.8),
@@ -128,7 +160,7 @@ export async function forYou(userId?: string): Promise<Vid[]> {
       };
       const score = (Object.keys(W) as (keyof typeof W)[]).reduce((a, k) => a + W[k] * pred[k], 0);
       const reason =
-        aff > 1 ? "From a creator you enjoy" : sim > 0.15 ? "Matches your interests" : hasHistory && popularity > 1 ? "Popular on Xorost" : fresh > 0.7 ? "New on Xorost" : "Popular on Xorost";
+        cf > 0.5 ? "Liked by viewers like you" : aff > 1 ? "From a creator you enjoy" : sim > 0.15 ? "Matches your interests" : hasHistory && popularity > 1 ? "Popular on Xorost" : fresh > 0.7 ? "New on Xorost" : "Popular on Xorost";
       return { v: { ...v, reason }, score, sim, quality };
     })
     .sort((a, b) => b.score - a.score);
