@@ -1,3 +1,3 @@
-- [ ] Add compact feed typography and a phone-friendly upload form.
-- [ ] Persist creator descriptions and validate upload limits in browser and on the server.
-- [ ] Verify upload, refresh persistence, and rejection states.
+- [x] Add compact feed typography and a phone-friendly upload form.
+- [x] Persist creator descriptions and validate upload limits in browser and on the server.
+- [x] Verify upload, refresh persistence, and rejection states.
