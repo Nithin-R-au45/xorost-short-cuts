@@ -34,13 +34,20 @@ function ProfilePage() {
 
   const load = async () => {
     if (!uid) return;
-    const [{ count: fr }, { count: fg }, { data: v }] = await Promise.all([
-      supabase.from("follows").select("*", { count: "exact", head: true }).eq("followee_id", uid),
-      supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", uid),
+    const [{ data: fr }, { data: fg }, { data: v }] = await Promise.all([
+      supabase.from("follows").select("follower_id").eq("followee_id", uid),
+      supabase.from("follows").select("followee_id").eq("follower_id", uid),
       supabase.from("videos").select("id,title,path,thumb_path,created_at").eq("user_id", uid).order("created_at", { ascending: false }),
     ]);
-    setFollowers(fr ?? 0);
-    setFollowing(fg ?? 0);
+    const ids = [...(fr ?? []).map((x) => x.follower_id), ...(fg ?? []).map((x) => x.followee_id)];
+    const { data: profs } = ids.length
+      ? await supabase.from("profiles").select("id,name").in("id", ids)
+      : { data: [] as { id: string; name: string }[] };
+    const nm = (id: string) => profs?.find((p) => p.id === id)?.name ?? "user";
+    setFollowerList((fr ?? []).map((x) => nm(x.follower_id)));
+    setFollowingList((fg ?? []).map((x) => nm(x.followee_id)));
+    setFollowers(fr?.length ?? 0);
+    setFollowing(fg?.length ?? 0);
     setVideos(v ?? []);
     if (v?.length) {
       // Prefer the stored thumbnail image; fall back to the video file for older uploads.
