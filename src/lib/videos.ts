@@ -30,6 +30,8 @@ export async function extractFrames(file: File, onProgress?: (p: number) => void
   const url = URL.createObjectURL(file);
   const v = document.createElement("video");
   v.muted = true;
+  v.playsInline = true;
+  v.setAttribute("playsinline", "");
   v.preload = "auto";
   v.src = url;
   await new Promise<void>((res, rej) => {
@@ -67,6 +69,8 @@ export async function extractThumb(file: File): Promise<Blob> {
   try {
     const v = document.createElement("video");
     v.muted = true;
+    v.playsInline = true;
+    v.setAttribute("playsinline", "");
     v.preload = "auto";
     v.src = url;
     await new Promise<void>((res, rej) => {

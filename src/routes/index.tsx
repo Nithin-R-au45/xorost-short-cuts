@@ -45,7 +45,9 @@ function Index() {
       const title = f.name.replace(/\.[^.]+$/, "").slice(0, 200) || "Untitled";
       setBusy("Uploading…");
       const path = `${session.user.id}/${crypto.randomUUID()}-${f.name.replace(/[^\w.-]/g, "_")}`;
-      const up = await supabase.storage.from("videos").upload(path, f, { contentType: f.type });
+      const ext = f.name.split(".").pop()?.toLowerCase();
+      const contentType = f.type || (ext === "mov" ? "video/quicktime" : ext === "webm" ? "video/webm" : "video/mp4");
+      const up = await supabase.storage.from("videos").upload(path, f, { contentType });
       if (up.error) throw up.error;
       const { data: v, error } = await supabase.from("videos").insert({ user_id: session.user.id, title, path }).select("id").single();
       if (error) throw error;
@@ -84,9 +86,25 @@ function Index() {
   const header = (
     <>
       {busy && <span className="rounded-full bg-background/70 px-3 py-1.5 text-xs">{busy}</span>}
-      <label className="cursor-pointer rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground" onClick={(e) => e.stopPropagation()}>
+      <label
+        className="cursor-pointer touch-manipulation rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
+      >
         + Upload
-        <input type="file" accept="video/*" className="hidden" disabled={!!busy} onChange={(e) => onUpload(e.target.files?.[0])} />
+        <input
+          type="file"
+          accept="video/*,.mov,.mp4,.m4v,.webm,.3gp"
+          className="sr-only"
+          disabled={!!busy}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            onUpload(f);
+          }}
+        />
       </label>
       {session ? (
         <ProfileMenu session={session} />
