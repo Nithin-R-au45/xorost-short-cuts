@@ -1,0 +1,59 @@
+import { supabase } from "@/integrations/supabase/client";
+
+export const SEG = 60;
+export type Segment = { idx: number; title: string; summary: string };
+export type Vid = { id?: string; title: string; src: string; key: string; segments?: Segment[] };
+
+export async function fetchVideos(ids?: string[]): Promise<Vid[]> {
+  let q = supabase.from("videos").select("id,title,path,video_segments(idx,title,summary)").order("created_at", { ascending: false }).limit(50);
+  if (ids) {
+    if (!ids.length) return [];
+    q = q.in("id", ids);
+  }
+  const { data } = await q;
+  if (!data?.length) return [];
+  const { data: signed } = await supabase.storage.from("videos").createSignedUrls(data.map((d) => d.path), 60 * 60 * 6);
+  return data.map((d, i) => ({
+    id: d.id,
+    title: d.title,
+    src: signed?.[i]?.signedUrl ?? "",
+    key: "vid:" + d.id,
+    segments: (d.video_segments ?? []).sort((a, b) => a.idx - b.idx),
+  }));
+}
+
+/** Grab a few small JPEG frames from each minute of a video file. */
+export async function extractFrames(file: File, onProgress?: (p: number) => void): Promise<string[][]> {
+  const url = URL.createObjectURL(file);
+  const v = document.createElement("video");
+  v.muted = true;
+  v.preload = "auto";
+  v.src = url;
+  await new Promise<void>((res, rej) => {
+    v.onloadedmetadata = () => res();
+    v.onerror = () => rej(new Error("Can't read video"));
+  });
+  const parts = Math.max(1, Math.ceil(v.duration / SEG));
+  const w = 384;
+  const h = Math.round((w * v.videoHeight) / (v.videoWidth || 1)) || 216;
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext("2d")!;
+  const out: string[][] = [];
+  for (let p = 0; p < parts; p++) {
+    const start = p * SEG;
+    const len = Math.min(SEG, v.duration - start);
+    const frames: string[] = [];
+    for (const f of [0.15, 0.5, 0.85]) {
+      v.currentTime = start + len * f;
+      await new Promise((r) => (v.onseeked = r));
+      ctx.drawImage(v, 0, 0, w, h);
+      frames.push(c.toDataURL("image/jpeg", 0.6));
+    }
+    out.push(frames);
+    onProgress?.((p + 1) / parts);
+  }
+  URL.revokeObjectURL(url);
+  return out;
+}
