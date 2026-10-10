@@ -57,7 +57,7 @@ function AuthPage() {
     <main className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6">
         <Link to="/" className="font-display text-2xl font-bold tracking-tight">
-          Xoro<span className="text-primary">st</span>
+          Xoro<span className="text-foreground">st</span>
         </Link>
         <h1 className="mt-4 font-display text-xl font-semibold">
           {mode === "signin" ? "Sign in" : "Create your account"}

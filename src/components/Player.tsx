@@ -140,7 +140,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
         <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-overlay to-transparent p-4">
           <div className="flex items-center justify-between">
             <h1 className="font-display text-2xl font-bold tracking-tight">
-              Xoro<span className="text-primary">st</span>
+              Xoro<span className="text-foreground">st</span>
             </h1>
             <div className="pointer-events-auto flex items-center gap-2">
               {headerRight}
