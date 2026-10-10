@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -45,13 +44,6 @@ function AuthPage() {
     setBusy(false);
   };
 
-  const google = async () => {
-    setMsg(null);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) setMsg(result.error.message);
-  };
 
   return (
     <main className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
@@ -63,17 +55,6 @@ function AuthPage() {
           {mode === "signin" ? "Sign in" : "Create your account"}
         </h1>
 
-        <button
-          type="button"
-          onClick={google}
-          className="mt-5 w-full rounded-full border border-border bg-background py-2.5 text-sm font-semibold transition-colors hover:bg-accent"
-        >
-          Continue with Google
-        </button>
-
-        <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
-          <div className="h-px flex-1 bg-border" /> or <div className="h-px flex-1 bg-border" />
-        </div>
 
         <form onSubmit={submit} className="flex flex-col gap-3">
           <input
