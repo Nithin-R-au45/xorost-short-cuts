@@ -61,6 +61,7 @@ function Index() {
     });
   };
   const nextVideo = (d: number) => {
+    if (!videos.length) return;
     setVi((v) => (v + d + videos.length) % videos.length);
     setPart(0);
     setDuration(0);
