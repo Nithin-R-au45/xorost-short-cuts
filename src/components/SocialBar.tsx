@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { Session } from "@supabase/supabase-js";
-import { Heart, ThumbsDown, Share2, MessageCircle, Bookmark, X } from "lucide-react";
+import { Heart, ThumbsDown, Share2, MessageCircle, Bookmark, X, UserPlus, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 type Comment = { id: string; author: string; body: string; created_at: string; user_id: string };
 
-export function SocialBar({ videoKey, title, session }: { videoKey: string; title: string; session: Session | null }) {
+export function SocialBar({ videoKey, title, session, authorId }: { videoKey: string; title: string; session: Session | null; authorId?: string }) {
   const nav = useNavigate();
   const uid = session?.user.id;
   const [likes, setLikes] = useState(0);
