@@ -10,7 +10,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
   const [part, setPart] = useState(0);
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [ended, setEnded] = useState(false);
+  const [showSwipe, setShowSwipe] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [overflowing, setOverflowing] = useState(false);
@@ -18,6 +18,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
   const summaryRef = useRef<HTMLParagraphElement>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const lock = useRef(0);
+  const advancing = useRef(false);
 
   useEffect(() => {
     if (!localStorage.getItem("xorost_seen_controls")) setShowHint(true);
@@ -44,6 +45,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
       }
       setProgress(0);
       setPart(0);
+      advancing.current = false;
       return;
     }
     setPart(n);
@@ -60,7 +62,7 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
     const el = ref.current;
     if (!el || !duration) return;
     el.currentTime = part * SEG;
-    setEnded(false);
+    advancing.current = false;
     el.play().catch(() => {});
   }, [part, duration]);
 
@@ -76,17 +78,25 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
     const end = Math.min(start + SEG, duration || Infinity);
     setProgress(Math.min(1, (el.currentTime - start) / (end - start)));
     if (el.currentTime >= end - 0.05) {
-      if (!ended && session && video?.id) recordView(session.user.id, video.id, part, end - start).catch(() => {});
+      if (advancing.current) return;
+      advancing.current = true;
+      if (session && video?.id) recordView(session.user.id, video.id, part, end - start).catch(() => {});
       if (part + 1 >= parts) {
-        // last part finished — loop the same video from the start
+        // the whole video finished — loop it from the start
         el.currentTime = 0;
         setProgress(0);
         setPart(0);
         el.play().catch(() => {});
+        advancing.current = false;
         return;
       }
-      el.pause();
-      setEnded(true);
+      // a part finished — roll straight into the next one, no stopping
+      if (!localStorage.getItem("xorost_seen_swipe")) {
+        localStorage.setItem("xorost_seen_swipe", "1");
+        setShowSwipe(true);
+        window.setTimeout(() => setShowSwipe(false), 2600);
+      }
+      setPart(part + 1);
     }
   };
 
@@ -235,10 +245,12 @@ export function Player({ videos, session, headerRight, empty }: { videos: Vid[];
           </div>
         )}
 
-        {ended && !showHint && (
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-overlay text-center">
-            <p className="animate-hint font-display text-5xl">←</p>
-            <p className="font-display text-xl font-semibold">Swipe left for Part {part + 2}</p>
+        {showSwipe && !showHint && (
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center">
+            <div className="flex items-center gap-2 rounded-full bg-overlay px-4 py-2">
+              <p className="animate-hint font-display text-lg">←</p>
+              <p className="font-display text-sm font-semibold">Swipe left for the next part</p>
+            </div>
           </div>
         )}
         </>
