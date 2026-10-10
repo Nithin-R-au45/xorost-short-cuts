@@ -207,27 +207,36 @@ export type Database = {
       videos: {
         Row: {
           created_at: string
+          description: string
+          duration_seconds: number | null
           embedding: number[] | null
           id: string
           path: string
+          size_bytes: number | null
           thumb_path: string | null
           title: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          description?: string
+          duration_seconds?: number | null
           embedding?: number[] | null
           id?: string
           path: string
+          size_bytes?: number | null
           thumb_path?: string | null
           title: string
           user_id: string
         }
         Update: {
           created_at?: string
+          description?: string
+          duration_seconds?: number | null
           embedding?: number[] | null
           id?: string
           path?: string
+          size_bytes?: number | null
           thumb_path?: string | null
           title?: string
           user_id?: string
