@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 - Videos live in the private `videos` storage bucket + `videos` table, played via signed URLs; social keys use `vid:<id>`. Why: workspace blocks public buckets.
 - Per-minute AI titles/summaries come from browser-extracted frames sent to `generateSegment` (server fn). Why: no server-side video decoding on Workers.
+- Home feed is ranked client-side by `src/lib/recommend.ts` (adapted from xai-org/x-algorithm: sources → filters → weighted action predictions → author diversity), using `video_views` + reactions/saves/comments. Why: small catalog; no ML service on Workers.

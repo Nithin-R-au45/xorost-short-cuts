@@ -106,6 +106,38 @@ export type Database = {
           },
         ]
       }
+      video_views: {
+        Row: {
+          max_part: number
+          seconds: number
+          updated_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          max_part?: number
+          seconds?: number
+          updated_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          max_part?: number
+          seconds?: number
+          updated_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_views_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       videos: {
         Row: {
           created_at: string
@@ -135,7 +167,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      video_popularity: {
+        Args: never
+        Returns: {
+          saves: number
+          video_id: string
+          viewers: number
+          watch_seconds: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

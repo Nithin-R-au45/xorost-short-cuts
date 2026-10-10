@@ -4,7 +4,8 @@ import { pill, useSession } from "@/lib/session";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Player } from "@/components/Player";
-import { extractFrames, fetchVideos, type Vid } from "@/lib/videos";
+import { extractFrames, type Vid } from "@/lib/videos";
+import { forYou } from "@/lib/recommend";
 import { generateSegment } from "@/lib/segments.functions";
 
 export const Route = createFileRoute("/")({
@@ -26,10 +27,12 @@ function Index() {
   const [videos, setVideos] = useState<Vid[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
 
-  const reload = () => fetchVideos().then(setVideos);
+  const uid = session?.user.id;
+  const reload = () => forYou(uid).then(setVideos);
   useEffect(() => {
     reload();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid]);
 
   const onUpload = async (f?: File) => {
     if (!f) return;
